@@ -1,0 +1,7 @@
+node_modules/
+docs/
+n8n-workflows/
+Glass ai demo.json
+PAYFAST-*.md
+.env
+.env.local
