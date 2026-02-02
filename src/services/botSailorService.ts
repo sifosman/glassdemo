@@ -1,0 +1,85 @@
+import axios from 'axios';
+
+export class BotSailorService {
+  private readonly baseUrl: string;
+  private readonly apiKey: string;
+  private readonly phoneNumberId: string;
+
+  constructor() {
+    // These should be stored in environment variables
+    this.baseUrl = process.env.BOTSAILOR_API_BASE_URL || 'https://botsailor.com';
+    this.apiKey = process.env.BOTSAILOR_API_KEY || '';
+    this.phoneNumberId = process.env.BOTSAILOR_PHONE_NUMBER_ID || '';
+  }
+
+  async sendPDFToWhatsApp(whatsappUserId: string, pdfUrl: string, quoteReference: string): Promise<void> {
+    try {
+      const message = `🔷 *OWD Glass Quote ${quoteReference}*\n\nYour glass quotation is ready!\n\n📋 View your detailed quote here:\n${pdfUrl}\n\nQuote valid for 10 days.\n\nFor any questions, please contact us:\n📧 info@owdglass.co.za\n📞 +27 12 345 6789\n\nSANS 10400-N Compliant ✅`;
+
+      await this.sendTextMessage(whatsappUserId, message);
+
+      console.log(`PDF quote ${quoteReference} sent successfully to ${whatsappUserId}`);
+      
+    } catch (error) {
+      console.error('Error sending PDF via BotSailor:', error);
+      
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        throw new Error(`Failed to send WhatsApp message: ${errorMessage}`);
+      }
+      
+      throw new Error('Failed to send WhatsApp message via BotSailor');
+    }
+  }
+
+  async sendQuoteLinkToWhatsApp(whatsappUserId: string, quoteUrl: string, quoteReference: string): Promise<void> {
+    try {
+      const message = `🔷 *OWD Glass Quote ${quoteReference}*\n\nYour glass quotation is ready!\n\n📋 View your detailed quote here:\n${quoteUrl}\n\nQuote valid for 10 days.\n\nFor any questions, please contact us:\n📧 info@owdglass.co.za\n📞 +27 12 345 6789\n\nSANS 10400-N Compliant ✅`;
+
+      await this.sendTextMessage(whatsappUserId, message);
+
+      console.log(`Quote link ${quoteReference} sent successfully to ${whatsappUserId}`);
+      
+    } catch (error) {
+      console.error('Error sending quote link via BotSailor:', error);
+      
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        throw new Error(`Failed to send WhatsApp message: ${errorMessage}`);
+      }
+      
+      throw new Error('Failed to send WhatsApp message via BotSailor');
+    }
+  }
+
+  async sendTextMessage(whatsappUserId: string, message: string): Promise<void> {
+    try {
+      const payload = {
+        apiToken: this.apiKey,
+        phone_number_id: this.phoneNumberId,
+        message: message,
+        phone_number: whatsappUserId
+      };
+
+      const endpoint = `${this.baseUrl}/api/v1/whatsapp/send`.replace(/\/+/g, '/');
+
+      const response = await axios.post(endpoint, payload);
+
+      if (response.data.status !== "1") {
+        throw new Error(`BotSailor API returned status: ${response.data.message}`);
+      }
+
+      console.log(`Text message sent successfully to ${whatsappUserId}`);
+      
+    } catch (error) {
+      console.error('Error sending text message via BotSailor:', error);
+      
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        throw new Error(`Failed to send WhatsApp message: ${errorMessage}`);
+      }
+      
+      throw new Error('Failed to send WhatsApp message via BotSailor');
+    }
+  }
+}
