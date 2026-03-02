@@ -126,7 +126,7 @@ export default function RepairCheckoutPage() {
             </span>
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-900">
             <p>Reference: <span className="font-mono font-medium">{repairData.reference_number}</span></p>
             <p>Date: {new Date(repairData.created_at).toLocaleDateString('en-ZA')}</p>
           </div>
@@ -140,25 +140,25 @@ export default function RepairCheckoutPage() {
           
           <div className="space-y-3">
             <div className="flex justify-between py-2 border-b border-gray-100">
-              <span className="text-gray-600">Type</span>
+              <span className="text-gray-900">Type</span>
               <span className="font-medium capitalize">{repairData.system_type}</span>
             </div>
             
             <div className="flex justify-between py-2 border-b border-gray-100">
-              <span className="text-gray-600">Glass Type</span>
+              <span className="text-gray-900">Glass Type</span>
               <span className="font-medium">{repairData.glass_type}</span>
             </div>
             
             {repairData.frame_finish && (
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-600">Frame Finish</span>
+                <span className="text-gray-900">Frame Finish</span>
                 <span className="font-medium">{repairData.frame_finish}</span>
               </div>
             )}
             
             {repairData.distance_km && (
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-600">Distance</span>
+                <span className="text-gray-900">Distance</span>
                 <span className="font-medium">{repairData.distance_km} km</span>
               </div>
             )}
@@ -186,12 +186,12 @@ export default function RepairCheckoutPage() {
           
           <div className="space-y-3">
             <div className="flex justify-between py-2">
-              <span className="text-gray-600">Materials & Installation</span>
+              <span className="text-gray-900">Materials & Installation</span>
               <span className="font-medium">R{repairData.materials_fitting.toFixed(2)}</span>
             </div>
             
             <div className="flex justify-between py-2">
-              <span className="text-gray-600">Travel & Call-out ({repairData.distance_km}km)</span>
+              <span className="text-gray-900">Travel & Call-out ({repairData.distance_km}km)</span>
               <span className="font-medium">R{repairData.calculated_call_out_fee.toFixed(2)}</span>
             </div>
             
@@ -201,7 +201,7 @@ export default function RepairCheckoutPage() {
             </div>
           </div>
 
-          <div className="mt-4 text-sm text-gray-500 italic">
+          <div className="mt-4 text-sm text-gray-900 italic">
             This is a rough estimate based on the photo. An official, final quote will be provided on-site by our expert staff.
           </div>
         </div>
@@ -213,7 +213,7 @@ export default function RepairCheckoutPage() {
               <span className="mr-2">💳</span> Secure Payment
             </h2>
             
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-900 mb-6">
               Pay the call-out fee of <strong>R{repairData.calculated_call_out_fee.toFixed(2)}</strong> to schedule your repair. 
               This covers our technician's travel to your location for the official assessment.
             </p>
@@ -237,7 +237,7 @@ export default function RepairCheckoutPage() {
                 )}
               </button>
 
-              <div className="text-center text-sm text-gray-500">
+              <div className="text-center text-sm text-gray-900">
                 Secure payment processed by PayFast
               </div>
             </div>
@@ -254,8 +254,7 @@ export default function RepairCheckoutPage() {
           </div>
         )}
 
-        {/* Footer */}
-        <div className="mt-8 text-center text-sm text-gray-500">
+        <div className="mt-8 text-center text-sm text-gray-900">
           <p>OWD Glass | Professional Glazing Services</p>
           <p className="mt-1">Questions? Contact us at info@owdglass.co.za</p>
         </div>
