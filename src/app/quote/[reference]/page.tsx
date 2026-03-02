@@ -339,13 +339,13 @@ export default function QuotePage() {
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
         
-        const displayName = item.systemName || item.description;
+        const specDisplayName = item.systemName || item.description;
         const glassType = item.glassSpec?.type || 'Clear Float';
         const glassThickness = item.glassSpec?.thickness || '4mm';
         const frameFinish = item.frameColor || 'Charcoal Matt';
         const powderCode = item.powderCoatCode || 'PIS71149';
         
-        pdf.text(`Design: ${displayName}`, margin, yPosition);
+        pdf.text(`Design: ${specDisplayName}`, margin, yPosition);
         yPosition += 7;
         pdf.text(`Frame Finish: ${frameFinish} ${powderCode}`, margin, yPosition);
         yPosition += 7;
