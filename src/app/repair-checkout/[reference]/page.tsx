@@ -102,7 +102,7 @@ export default function RepairCheckoutPage() {
         <div className="bg-white rounded-lg shadow-md p-6 max-w-md w-full text-center">
           <div className="text-red-500 text-xl mb-2">⚠️</div>
           <h2 className="text-lg font-semibold text-gray-800 mb-2">Error</h2>
-          <p className="text-gray-600">{error || 'Repair request not found'}</p>
+          <p className="text-gray-900">{error || 'Repair request not found'}</p>
         </div>
       </div>
     );
@@ -141,25 +141,25 @@ export default function RepairCheckoutPage() {
           <div className="space-y-3">
             <div className="flex justify-between py-2 border-b border-gray-100">
               <span className="text-gray-900">Type</span>
-              <span className="font-medium capitalize">{repairData.system_type}</span>
+              <span className="font-medium text-gray-900 capitalize">{repairData.system_type}</span>
             </div>
             
             <div className="flex justify-between py-2 border-b border-gray-100">
               <span className="text-gray-900">Glass Type</span>
-              <span className="font-medium">{repairData.glass_type}</span>
+              <span className="font-medium text-gray-900">{repairData.glass_type}</span>
             </div>
             
             {repairData.frame_finish && (
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-900">Frame Finish</span>
-                <span className="font-medium">{repairData.frame_finish}</span>
+                <span className="font-medium text-gray-900">{repairData.frame_finish}</span>
               </div>
             )}
             
             {repairData.distance_km && (
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-900">Distance</span>
-                <span className="font-medium">{repairData.distance_km} km</span>
+                <span className="font-medium text-gray-900">{repairData.distance_km} km</span>
               </div>
             )}
           </div>
@@ -187,17 +187,17 @@ export default function RepairCheckoutPage() {
           <div className="space-y-3">
             <div className="flex justify-between py-2">
               <span className="text-gray-900">Materials & Installation</span>
-              <span className="font-medium">R{repairData.materials_fitting.toFixed(2)}</span>
+              <span className="font-medium text-gray-900">R{repairData.materials_fitting.toFixed(2)}</span>
             </div>
             
             <div className="flex justify-between py-2">
               <span className="text-gray-900">Travel & Call-out ({repairData.distance_km}km)</span>
-              <span className="font-medium">R{repairData.calculated_call_out_fee.toFixed(2)}</span>
+              <span className="font-medium text-gray-900">R{repairData.calculated_call_out_fee.toFixed(2)}</span>
             </div>
             
             <div className="flex justify-between py-3 border-t-2 border-gray-200 mt-2">
               <span className="text-lg font-semibold text-gray-800">Total Estimated Cost</span>
-              <span className="text-lg font-bold text-blue-600">R{repairData.total_price.toFixed(2)}</span>
+              <span className="text-lg font-bold text-gray-900">R{repairData.total_price.toFixed(2)}</span>
             </div>
           </div>
 
