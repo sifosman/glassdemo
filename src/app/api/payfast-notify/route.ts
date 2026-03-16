@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import { BotSailorService } from '@/services/botSailorService';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -254,6 +255,20 @@ export async function POST(request: NextRequest) {
         amount_gross: amountGross,
         pf_payment_id: pfPaymentId,
       });
+
+      // Send WhatsApp payment confirmation to customer
+      try {
+        const botSailorService = new BotSailorService();
+        await botSailorService.sendPaymentConfirmation(
+          repairRequest.customer_phone,
+          repairRequest.reference_number,
+          amountGross
+        );
+        console.log('WhatsApp payment confirmation sent successfully');
+      } catch (whatsappError) {
+        console.error('Failed to send WhatsApp payment confirmation:', whatsappError);
+        // Don't fail the payment process if WhatsApp fails
+      }
 
       // Update notification status
       if (emailSent) {

@@ -52,6 +52,26 @@ export class BotSailorService {
     }
   }
 
+  async sendPaymentConfirmation(whatsappUserId: string, referenceNumber: string, amount: number): Promise<void> {
+    try {
+      const message = `✅ *Payment Received - OWD Glass*\n\nThank you for your payment!\n\n📋 Reference: ${referenceNumber}\n💰 Amount Paid: R${amount.toFixed(2)}\n\nOne of our expert technicians will contact you within 2 hours to schedule your repair assessment.\n\n🔧 What happens next:\n• We'll call you to arrange a convenient time\n• Our technician will assess the damage on-site\n• You'll receive an official quote for the repair work\n\nQuestions? Contact us:\n📧 info@owdglass.co.za\n📞 +27 12 345 6789\n\nOWD Glass - Professional Glazing Solutions`;
+
+      await this.sendTextMessage(whatsappUserId, message);
+
+      console.log(`Payment confirmation sent successfully to ${whatsappUserId} for ${referenceNumber}`);
+      
+    } catch (error) {
+      console.error('Error sending payment confirmation via BotSailor:', error);
+      
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        throw new Error(`Failed to send WhatsApp message: ${errorMessage}`);
+      }
+      
+      throw new Error('Failed to send WhatsApp message via BotSailor');
+    }
+  }
+
   async sendTextMessage(whatsappUserId: string, message: string): Promise<void> {
     try {
       const payload = {

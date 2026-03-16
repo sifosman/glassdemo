@@ -84,7 +84,7 @@ export default function QuotePage() {
     
     try {
       const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF;
+      const jsPDF = jsPDFModule.default || jsPDFModule;
       
       // Show loading state
       if (button) {
