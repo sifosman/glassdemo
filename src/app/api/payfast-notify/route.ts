@@ -193,11 +193,16 @@ export async function POST(request: NextRequest) {
 
     console.log('PayFast notification received:', data);
 
-    // Verify signature (in sandbox, you may opt to log instead of rejecting)
+    // Verify signature (in sandbox, log instead of rejecting)
     if (data.signature) {
-      const isValid = verifySignature(data, PAYFAST_PASSPHRASE);
+      const isValidWithPassphrase = PAYFAST_PASSPHRASE ? verifySignature(data, PAYFAST_PASSPHRASE) : false;
+      const isValidWithoutPassphrase = verifySignature(data, '');
+      const isValid = isValidWithPassphrase || isValidWithoutPassphrase;
+
       if (!isValid) {
         console.error('PayFast signature verification failed');
+      } else if (isValidWithoutPassphrase && PAYFAST_PASSPHRASE) {
+        console.warn('PayFast signature verified without passphrase; check PAYFAST_PASSPHRASE configuration');
       }
     }
 
@@ -272,57 +277,79 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Failed to update quote status' }, { status: 500 });
         }
 
-        // Generate and send Invoice via WhatsApp
+        const botSailorService = new BotSailorService();
+        const whatsappUserId = data.custom_str4 || quoteRecord.customer_phone;
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app';
+        const quoteUrl = `${baseUrl}/quote/${quoteRecord.quote_number}?reference=${quoteRecord.quote_number}`;
+
+        let quotePdfUrl: string | undefined = quoteRecord.pdf_url || undefined;
+        let invoicePdfUrl: string | undefined;
+
         try {
-          // Import DatabaseService inside the block to avoid circular dependencies or use it properly
           const { DatabaseService } = await import('@/services/databaseService');
           const fullQuote = await DatabaseService.getQuote(quoteRecord.quote_number);
-          
-          if (fullQuote) {
-            // Provide updated deposit paid amount to the PDF service
-            fullQuote.depositPaid = depositPaid;
-            
-            const pdfService = new PDFService();
-            const invoiceBuffer = await pdfService.generateInvoicePDF(fullQuote, { pf_payment_id: pfPaymentId });
-            
-            const { pdfUrl, storagePath } = await pdfService.savePDF(invoiceBuffer, fullQuote.quoteNumber, true);
-            
-            // Save invoice to database
-            await DatabaseService.createInvoice({
-              quote_number: fullQuote.quoteNumber,
-              customer_name: fullQuote.customer.name,
-              customer_phone: fullQuote.customer.phone || quoteRecord.customer_phone,
-              customer_email: fullQuote.customer.email,
-              billing_address: fullQuote.customer.address,
-              subtotal: fullQuote.subtotal,
-              vat_amount: fullQuote.vatAmount,
-              total: fullQuote.total,
-              amount_paid: amountGross,
-              balance_due: fullQuote.total - depositPaid,
-              pdf_url: pdfUrl,
-              pdf_storage_path: storagePath
-            });
 
-            const botSailorService = new BotSailorService();
-            // Since we need whatsappUserId, we fallback to customer_phone if available
-            const whatsappUserId = data.custom_str4 || fullQuote.customer.phone || quoteRecord.customer_phone;
-            
-            if (whatsappUserId) {
-              await botSailorService.sendInvoiceToWhatsApp(
-                whatsappUserId,
-                pdfUrl,
-                fullQuote.quoteNumber,
-                depositPaid,
-                fullQuote.total
-              );
-              console.log('Invoice WhatsApp message sent successfully');
-            } else {
-              console.warn('No WhatsApp user ID found to send invoice');
+          if (fullQuote) {
+            const pdfService = new PDFService();
+
+            if (!quotePdfUrl && fullQuote.pdfUrl) {
+              quotePdfUrl = fullQuote.pdfUrl;
+            }
+
+            if (!quotePdfUrl) {
+              try {
+                const quoteBuffer = await pdfService.generateQuotePDF(fullQuote);
+                const { pdfUrl, storagePath } = await pdfService.savePDF(quoteBuffer, fullQuote.quoteNumber);
+                await DatabaseService.updateQuotePdfUrl(fullQuote.quoteNumber, pdfUrl, storagePath);
+                quotePdfUrl = pdfUrl;
+              } catch (quotePdfError) {
+                console.error('Failed to generate or save quote PDF:', quotePdfError);
+              }
+            }
+
+            try {
+              fullQuote.depositPaid = depositPaid;
+              const invoiceBuffer = await pdfService.generateInvoicePDF(fullQuote, { pf_payment_id: pfPaymentId });
+              const { pdfUrl, storagePath } = await pdfService.savePDF(invoiceBuffer, fullQuote.quoteNumber, true);
+              invoicePdfUrl = pdfUrl;
+
+              await DatabaseService.createInvoice({
+                quote_number: fullQuote.quoteNumber,
+                customer_name: fullQuote.customer.name,
+                customer_phone: fullQuote.customer.phone || quoteRecord.customer_phone,
+                customer_email: fullQuote.customer.email,
+                billing_address: fullQuote.customer.address,
+                subtotal: fullQuote.subtotal,
+                vat_amount: fullQuote.vatAmount,
+                total: fullQuote.total,
+                amount_paid: amountGross,
+                balance_due: fullQuote.total - depositPaid,
+                pdf_url: pdfUrl,
+                pdf_storage_path: storagePath,
+              });
+            } catch (invoiceError) {
+              console.error('Failed to generate or save invoice PDF:', invoiceError);
             }
           }
-        } catch (invoiceError) {
-          console.error('Failed to generate or send invoice:', invoiceError);
-          // Do not fail the transaction if WhatsApp sending fails
+        } catch (loadError) {
+          console.error('Failed to load quote for message composition:', loadError);
+        }
+
+        try {
+          if (whatsappUserId) {
+            const remainingBalance = Number(quoteRecord.total || 0) - depositPaid;
+            const quotePdfLine = quotePdfUrl ? `\n📄 Quote PDF:\n${quotePdfUrl}\n` : '';
+            const invoicePdfLine = invoicePdfUrl ? `\n🧾 Invoice PDF:\n${invoicePdfUrl}\n` : '';
+
+            const message = `✅ *Payment Received - OWD Glass*\n\nThank you, we have received your deposit payment.\n\n📌 Quote: ${quoteRecord.quote_number}\n💰 Deposit Paid: R${amountGross.toFixed(2)}\n🧾 Total Quote: R${Number(quoteRecord.total || 0).toFixed(2)}\n📌 Remaining Balance: R${remainingBalance.toFixed(2)}\n\nView your quote here:\n${quoteUrl}${quotePdfLine}${invoicePdfLine}\nOur scheduling team will contact you shortly to arrange installation. The remaining balance is due strictly upon completion of installation.\n\nOWD Glass`;
+
+            await botSailorService.sendTextMessage(whatsappUserId, message);
+            console.log('Payment confirmation WhatsApp message sent successfully');
+          } else {
+            console.warn('No WhatsApp user ID found to send payment confirmation');
+          }
+        } catch (messageError) {
+          console.error('Failed to send payment confirmation WhatsApp message:', messageError);
         }
 
         console.log('Quote deposit processed successfully:', referenceNumber);

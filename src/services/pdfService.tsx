@@ -252,7 +252,19 @@ export class PDFService {
       return Buffer.from(value);
     }
 
-    const maybeStream = value as { getReader?: () => { read: () => Promise<{ done: boolean; value?: Uint8Array }> } };
+    if (value instanceof ArrayBuffer) {
+      return Buffer.from(new Uint8Array(value));
+    }
+
+    const maybeHasArrayBuffer = value as { arrayBuffer?: () => Promise<ArrayBuffer> };
+    if (maybeHasArrayBuffer && typeof maybeHasArrayBuffer.arrayBuffer === 'function') {
+      const buffer = await maybeHasArrayBuffer.arrayBuffer();
+      return Buffer.from(new Uint8Array(buffer));
+    }
+
+    const maybeStream = value as {
+      getReader?: () => { read: () => Promise<{ done: boolean; value?: Uint8Array }> };
+    };
     if (maybeStream && typeof maybeStream.getReader === 'function') {
       const reader = maybeStream.getReader();
       const chunks: Buffer[] = [];
@@ -266,14 +278,55 @@ export class PDFService {
       return Buffer.concat(chunks);
     }
 
+    const maybeAsyncIterable = value as AsyncIterable<unknown>;
+    if (maybeAsyncIterable && typeof (maybeAsyncIterable as any)[Symbol.asyncIterator] === 'function') {
+      const chunks: Buffer[] = [];
+      for await (const chunk of maybeAsyncIterable as AsyncIterable<any>) {
+        if (typeof chunk === 'string') {
+          chunks.push(Buffer.from(chunk));
+        } else if (chunk instanceof Uint8Array) {
+          chunks.push(Buffer.from(chunk));
+        } else if (Buffer.isBuffer(chunk)) {
+          chunks.push(chunk);
+        }
+      }
+      if (chunks.length > 0) {
+        return Buffer.concat(chunks);
+      }
+    }
+
+    const maybeNodeStream = value as {
+      on?: (event: string, handler: (...args: any[]) => void) => void;
+    };
+    if (maybeNodeStream && typeof maybeNodeStream.on === 'function') {
+      const chunks: Buffer[] = [];
+      await new Promise<void>((resolve, reject) => {
+        maybeNodeStream.on?.('data', (chunk: any) => {
+          if (typeof chunk === 'string') chunks.push(Buffer.from(chunk));
+          else if (chunk instanceof Uint8Array) chunks.push(Buffer.from(chunk));
+          else if (Buffer.isBuffer(chunk)) chunks.push(chunk);
+        });
+        maybeNodeStream.on?.('end', () => resolve());
+        maybeNodeStream.on?.('error', (err: any) => reject(err));
+      });
+      if (chunks.length > 0) {
+        return Buffer.concat(chunks);
+      }
+    }
+
     throw new Error('Failed to convert PDF output to Buffer');
   }
 
   async generateQuotePDF(quote: Quote): Promise<Buffer> {
     try {
       const instance = pdf(<QuoteDocument quote={quote} />);
-      const output = await instance.toBuffer();
-      return await this.toNodeBuffer(output);
+      try {
+        const output = await instance.toBuffer();
+        return await this.toNodeBuffer(output);
+      } catch {
+        const blob = await (instance as any).toBlob();
+        return await this.toNodeBuffer(blob);
+      }
       
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -377,8 +430,13 @@ export class PDFService {
       );
 
       const instance = pdf(InvoiceDocument);
-      const output = await instance.toBuffer();
-      return await this.toNodeBuffer(output);
+      try {
+        const output = await instance.toBuffer();
+        return await this.toNodeBuffer(output);
+      } catch {
+        const blob = await (instance as any).toBlob();
+        return await this.toNodeBuffer(blob);
+      }
       
     } catch (error) {
       console.error('Error generating Invoice PDF:', error);
