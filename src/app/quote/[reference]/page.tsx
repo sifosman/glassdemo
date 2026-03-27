@@ -35,6 +35,12 @@ interface Quote {
   safetyReason?: string;
   createdDate: string;
   expiryDate: string;
+  status: string;
+  depositRequired: number;
+  depositAmount: number;
+  depositPaid: number;
+  depositPaidAt?: string;
+  acceptedAt?: string;
 }
 
 export default function QuotePage() {
@@ -42,6 +48,7 @@ export default function QuotePage() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   useEffect(() => {
     const reference = searchParams.get('reference');
@@ -74,6 +81,68 @@ export default function QuotePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePayment = async () => {
+    if (!quote) return;
+
+    setPaymentLoading(true);
+    try {
+      const response = await fetch('/api/payfast-initiate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reference_number: quote.quoteNumber,
+          amount: quote.depositAmount,
+          item_name: `Quote Deposit - ${quote.quoteNumber}`,
+          return_url: `${window.location.origin}/quote/${quote.quoteNumber}/success`,
+          cancel_url: `${window.location.origin}/quote/${quote.quoteNumber}`,
+          payment_type: 'quote',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to initiate payment');
+      }
+
+      if (result.checkout_url) {
+        window.location.href = result.checkout_url;
+        return;
+      }
+
+      throw new Error('Failed to create payment session');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Payment initiation failed');
+      setPaymentLoading(false);
+    }
+  };
+
+  const displayItems = (quote?.items ?? []).filter((item) => {
+    const description = item.description.toLowerCase().trim();
+    return !description.includes('materials & installation');
+  });
+  const hiddenItemsTotal = (quote?.items ?? [])
+    .filter((item) => item.description.toLowerCase().trim().includes('materials & installation'))
+    .reduce((sum, item) => sum + item.totalPrice, 0);
+  const displaySubtotal = Math.max((quote?.subtotal ?? 0) - hiddenItemsTotal, 0);
+  const displayVatAmount = displaySubtotal * ((quote?.vatRate ?? 0) / 100);
+  const displayTotal = displaySubtotal - (quote?.discountAmount ?? 0) + displayVatAmount;
+  const displayDepositAmount = displayTotal * ((quote?.depositRequired ?? 0) / 100);
+  const depositOutstanding = Math.max(displayDepositAmount - (quote?.depositPaid ?? 0), 0);
+  const depositPaidInFull = depositOutstanding <= 0;
+  const quoteAccepted = quote?.status === 'accepted' || depositPaidInFull;
+  const quoteStatusLabel = quoteAccepted ? 'Accepted' : quote?.status === 'sent' ? 'Active' : (quote?.status ?? 'Pending');
+
+  const getDisplayDescription = (description: string) => {
+    if (description.toLowerCase().includes('travel & callout fee')) {
+      return 'Travel & callout fee incl. professional laser-measurement';
+    }
+
+    return description;
   };
 
   const downloadQuote = async () => {
@@ -472,7 +541,7 @@ export default function QuotePage() {
           <div className="text-center">
             <div className="text-gray-500 text-5xl mb-4">⚠️</div>
             <h1 className="text-xl font-bold text-gray-900 mb-2">Quote Not Found</h1>
-            <p className="text-gray-600">{error || 'The quote you are looking for could not be found.'}</p>
+            <p className="text-gray-900">{error || 'The quote you are looking for could not be found.'}</p>
           </div>
         </div>
       </div>
@@ -484,6 +553,27 @@ export default function QuotePage() {
       <div className="max-w-4xl mx-auto">
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row justify-end gap-3 mb-6">
+          {!depositPaidInFull && (
+            <button
+              onClick={handlePayment}
+              disabled={paymentLoading}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {paymentLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a5 5 0 00-10 0v2M5 9h14l1 10H4L5 9zm7 4v3" />
+                  </svg>
+                  Make Payment Now
+                </>
+              )}
+            </button>
+          )}
           <button
             onClick={shareQuote}
             className="w-full sm:w-auto bg-gray-800 hover:bg-gray-900 text-white px-4 py-2.5 rounded-md font-medium transition-colors flex items-center justify-center gap-2"
@@ -514,30 +604,70 @@ export default function QuotePage() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">OWD Glass</h1>
-                  <p className="text-gray-600">Professional Glazing Solutions</p>
-                  <p className="text-gray-500 text-sm">SANS 10400-N Compliant | CGC Member</p>
+                  <p className="text-gray-900">Professional Glazing Solutions</p>
+                  <p className="text-gray-800 text-sm">SANS 10400-N Compliant | CGC Member</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-gray-600">📍 123 Glass Street, Pretoria, 0001</p>
-                  <p className="text-gray-600">📞 +27 12 345 6789</p>
+                  <p className="text-gray-900">📍 123 Glass Street, Pretoria, 0001</p>
+                  <p className="text-gray-900">📞 +27 12 345 6789</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">✉️ info@owdglass.co.za</p>
-                  <p className="text-gray-600">🌐 www.owdglass.co.za</p>
+                  <p className="text-gray-900">✉️ info@owdglass.co.za</p>
+                  <p className="text-gray-900">🌐 www.owdglass.co.za</p>
                 </div>
               </div>
             </div>
             <div className="bg-gray-50 p-6 rounded-lg min-w-[200px]">
-              <div className="text-sm text-gray-600 font-semibold mb-2 tracking-wide">QUOTATION</div>
+              <div className="text-sm text-gray-900 font-semibold mb-2 tracking-wide">QUOTATION</div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{quote.quoteNumber}</h2>
               <div className="space-y-1 text-sm">
-                <p className="text-gray-700"><span className="font-medium">Date:</span> {new Date(quote.createdDate).toLocaleDateString('en-ZA')}</p>
-                <p className="text-gray-700"><span className="font-medium">Valid:</span> 10 days</p>
-                <p className="text-gray-700"><span className="font-medium">Status:</span> <span className="text-green-600 font-medium">Active</span></p>
+                <p className="text-gray-900"><span className="font-medium">Date:</span> {new Date(quote.createdDate).toLocaleDateString('en-ZA')}</p>
+                <p className="text-gray-900"><span className="font-medium">Valid:</span> 10 days</p>
+                <p className="text-gray-900"><span className="font-medium">Status:</span> <span className={`font-medium ${quoteAccepted ? 'text-green-600' : 'text-amber-600'}`}>{quoteStatusLabel}</span></p>
+                <p className="text-gray-900"><span className="font-medium">Deposit:</span> R {displayDepositAmount.toFixed(2)}</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-green-100">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Accept this quote with a deposit</h3>
+              <p className="text-sm text-gray-900 mt-1">
+                Pay the deposit of <span className="font-semibold">R {displayDepositAmount.toFixed(2)}</span> to accept your quote and let our team start the next steps.
+              </p>
+              {depositPaidInFull ? (
+                <p className="text-sm text-green-700 mt-2">
+                  Deposit received{quote.depositPaidAt ? ` on ${new Date(quote.depositPaidAt).toLocaleString('en-ZA')}` : ''}.
+                </p>
+              ) : (
+                <p className="text-sm text-gray-900 mt-2">
+                  Outstanding deposit: <span className="font-semibold">R {depositOutstanding.toFixed(2)}</span>
+                </p>
+              )}
+            </div>
+            {!depositPaidInFull && (
+              <button
+                onClick={handlePayment}
+                disabled={paymentLoading}
+                className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {paymentLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    Make Payment Now
+                    <span className="ml-2">→</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -553,19 +683,19 @@ export default function QuotePage() {
             <div className="space-y-3">
               <h4 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">Customer Details</h4>
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                <p><span className="text-gray-600 text-sm">Name:</span> <span className="font-medium text-gray-900">{quote.customer.name}</span></p>
-                <p><span className="text-gray-600 text-sm">Email:</span> <span className="font-medium text-gray-900">{quote.customer.email}</span></p>
-                {quote.customer.phone && <p><span className="text-gray-600 text-sm">Phone:</span> <span className="font-medium text-gray-900">{quote.customer.phone}</span></p>}
-                <p><span className="text-gray-600 text-sm">Address:</span> <span className="font-medium text-gray-900">{quote.customer.address}</span></p>
+                <p><span className="text-gray-900 text-sm">Name:</span> <span className="font-medium text-gray-900">{quote.customer.name}</span></p>
+                <p><span className="text-gray-900 text-sm">Email:</span> <span className="font-medium text-gray-900">{quote.customer.email}</span></p>
+                {quote.customer.phone && <p><span className="text-gray-900 text-sm">Phone:</span> <span className="font-medium text-gray-900">{quote.customer.phone}</span></p>}
+                <p><span className="text-gray-900 text-sm">Address:</span> <span className="font-medium text-gray-900">{quote.customer.address}</span></p>
               </div>
             </div>
             <div className="space-y-3">
               <h4 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">Project Specifications</h4>
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                <p><span className="text-gray-600 text-sm">Total Items:</span> <span className="font-medium text-gray-900">{quote.items.length} units</span></p>
-                <p><span className="text-gray-600 text-sm">Glass Type:</span> <span className="font-medium text-gray-900">{quote.items[0]?.description.includes('Low-E') ? 'Low-E Energy Efficient' : 'Standard Clear'}</span></p>
-                <p><span className="text-gray-600 text-sm">Compliance:</span> <span className="font-medium text-gray-900">SANS 10400-N</span></p>
-                <p><span className="text-gray-600 text-sm">Safety Glass:</span> <span className={`font-medium ${quote.requiresSafetyGlass ? 'text-amber-600' : 'text-green-600'}`}>{quote.requiresSafetyGlass ? 'Required' : 'Not Required'}</span></p>
+                <p><span className="text-gray-900 text-sm">Total Items:</span> <span className="font-medium text-gray-900">{displayItems.length} units</span></p>
+                <p><span className="text-gray-900 text-sm">Glass Type:</span> <span className="font-medium text-gray-900">{quote.items[0]?.description.includes('Low-E') ? 'Low-E Energy Efficient' : 'Standard Clear'}</span></p>
+                <p><span className="text-gray-900 text-sm">Compliance:</span> <span className="font-medium text-gray-900">SANS 10400-N</span></p>
+                <p><span className="text-gray-900 text-sm">Safety Glass:</span> <span className={`font-medium ${quote.requiresSafetyGlass ? 'text-amber-600' : 'text-green-600'}`}>{quote.requiresSafetyGlass ? 'Required' : 'Not Required'}</span></p>
               </div>
             </div>
           </div>
@@ -581,7 +711,7 @@ export default function QuotePage() {
           </h3>
           
           <div className="space-y-6">
-            {quote.items.map((item, index) => {
+            {displayItems.map((item, index) => {
               // Generate reference code
               const generateRef = (desc: string, idx: number): string => {
                 const num = String(idx + 1).padStart(2, '0');
@@ -691,14 +821,14 @@ export default function QuotePage() {
                     <div className="lg:w-2/3">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <h4 className="font-semibold text-gray-900">{item.systemName || item.description}</h4>
+                          <h4 className="font-semibold text-gray-900">{getDisplayDescription(item.description)}</h4>
                           <div className="space-y-1 text-sm">
-                            <p><span className="text-gray-600">Reference:</span> <span className="font-bold text-gray-900">{ref}</span></p>
-                            <p><span className="text-gray-600">Type:</span> <span className="font-medium">{item.description.includes('door') ? 'Door' : item.description.includes('window') ? 'Window' : item.description.includes('Certificate') ? 'Documentation' : 'Panel'}</span></p>
+                            <p><span className="text-gray-900">Reference:</span> <span className="font-bold text-gray-900">{ref}</span></p>
+                            <p><span className="text-gray-900">Type:</span> <span className="font-medium text-gray-900">{item.description.includes('door') ? 'Door' : item.description.includes('window') ? 'Window' : item.description.includes('Certificate') ? 'Documentation' : 'Panel'}</span></p>
                             {item.size_mm !== 'N/A' && (
                               <>
-                                <p><span className="text-gray-600">Size:</span> <span className="font-medium">{item.size_mm}</span></p>
-                                <p><span className="text-gray-600">Area:</span> <span className="font-medium">{((widthMm * heightMm) / 1000000).toFixed(2)}m²</span></p>
+                                <p><span className="text-gray-900">Size:</span> <span className="font-medium text-gray-900">{item.size_mm}</span></p>
+                                <p><span className="text-gray-900">Area:</span> <span className="font-medium text-gray-900">{((widthMm * heightMm) / 1000000).toFixed(2)}m²</span></p>
                               </>
                             )}
                           </div>
@@ -707,21 +837,21 @@ export default function QuotePage() {
                           <div className="space-y-1 text-sm">
                             {item.glassSpec && (
                               <>
-                                <p><span className="text-gray-600">Glass Type:</span> <span className="font-medium">{item.glassSpec.type}</span></p>
-                                <p><span className="text-gray-600">Thickness:</span> <span className="font-medium">{item.glassSpec.thickness}</span></p>
+                                <p><span className="text-gray-900">Glass Type:</span> <span className="font-medium text-gray-900">{item.glassSpec.type}</span></p>
+                                <p><span className="text-gray-900">Thickness:</span> <span className="font-medium text-gray-900">{item.glassSpec.thickness}</span></p>
                               </>
                             )}
                             {item.frameColor && item.powderCoatCode && (
-                              <p><span className="text-gray-600">Frame Finish:</span> <span className="font-medium">{item.frameColor} {item.powderCoatCode}</span></p>
+                              <p><span className="text-gray-900">Frame Finish:</span> <span className="font-medium text-gray-900">{item.frameColor} {item.powderCoatCode}</span></p>
                             )}
                             {item.is_safety_glass && (
                               <>
-                                <p><span className="text-gray-600">Safety Rating:</span> <span className="font-medium text-green-600">SANS 1263-1 Compliant</span></p>
-                                <p><span className="text-gray-600">Compliance:</span> <span className="font-medium text-green-600">SANS 10400-N</span></p>
+                                <p><span className="text-gray-900">Safety Rating:</span> <span className="font-medium text-green-600">SANS 1263-1 Compliant</span></p>
+                                <p><span className="text-gray-900">Compliance:</span> <span className="font-medium text-green-600">SANS 10400-N</span></p>
                               </>
                             )}
                             {!item.is_safety_glass && item.size_mm !== 'N/A' && (
-                              <p><span className="text-gray-600">Safety Rating:</span> <span className="font-medium text-gray-600">Standard Grade</span></p>
+                              <p><span className="text-gray-900">Safety Rating:</span> <span className="font-medium text-gray-900">Standard Grade</span></p>
                             )}
                           </div>
                         </div>
@@ -729,12 +859,12 @@ export default function QuotePage() {
                       
                       {/* Pricing */}
                       <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-end">
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-900">
                           <p>Unit Price: <span className="font-medium text-gray-900">R {item.unitPrice.toFixed(2)}/m²</span></p>
                           <p>Quantity: <span className="font-medium text-gray-900">{item.quantity}</span></p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-gray-600">Total Price:</p>
+                          <p className="text-sm text-gray-900">Total Price:</p>
                           <p className="text-xl font-bold text-gray-900">R {item.totalPrice.toFixed(2)}</p>
                         </div>
                       </div>
@@ -756,23 +886,27 @@ export default function QuotePage() {
           </h3>
           <div className="space-y-2">
             <div className="flex justify-between text-sm sm:text-base">
-              <span className="text-gray-600">Subtotal:</span>
-              <span className="font-semibold text-gray-900">R {quote.subtotal.toFixed(2)}</span>
+              <span className="text-gray-900">Subtotal:</span>
+              <span className="font-semibold text-gray-900">R {displaySubtotal.toFixed(2)}</span>
             </div>
             {quote.discountAmount > 0 && (
               <div className="flex justify-between text-sm sm:text-base">
-                <span className="text-gray-600">Discount ({quote.discountPercent}%):</span>
+                <span className="text-gray-900">Discount ({quote.discountPercent}%):</span>
                 <span className="font-semibold text-green-600">-R {quote.discountAmount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between text-sm sm:text-base">
-              <span className="text-gray-600">VAT ({quote.vatRate}%):</span>
-              <span className="font-semibold text-gray-900">R {quote.vatAmount.toFixed(2)}</span>
+              <span className="text-gray-900">VAT ({quote.vatRate}%):</span>
+              <span className="font-semibold text-gray-900">R {displayVatAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm sm:text-base">
+              <span className="text-gray-900">Deposit Due ({quote.depositRequired}%):</span>
+              <span className="font-semibold text-gray-900">R {displayDepositAmount.toFixed(2)}</span>
             </div>
             <div className="border-t border-gray-200 pt-3 mt-3">
               <div className="flex justify-between text-lg sm:text-xl font-bold text-gray-900">
                 <span>TOTAL:</span>
-                <span>R {quote.total.toFixed(2)}</span>
+                <span>R {displayTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -782,8 +916,17 @@ export default function QuotePage() {
         {/* Footer */}
         <div className="bg-gray-800 rounded-lg p-6 text-white text-center">
           <h3 className="text-lg font-bold mb-2">Thank you for choosing OWD Glass!</h3>
-          <p className="text-gray-300 text-sm mb-4">To accept this quote or make changes, please contact us</p>
+          <p className="text-gray-300 text-sm mb-4">You can accept this quote by paying the deposit below, or contact us if you need any changes.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            {!depositPaidInFull && (
+              <button
+                onClick={handlePayment}
+                disabled={paymentLoading}
+                className="bg-green-600 text-white px-4 py-2.5 rounded-md font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {paymentLoading ? 'Processing...' : 'Make Payment Now'}
+              </button>
+            )}
             <a href="mailto:info@owdglass.co.za" className="bg-white text-gray-800 px-4 py-2.5 rounded-md font-medium hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 text-sm">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />

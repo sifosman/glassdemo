@@ -1,0 +1,306 @@
+{
+  "name": "New Glass Image Text",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "applicationApiUrl",
+              "value": "https://glassdemo.vercel.app/api/generate-quote",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "imageUrlField",
+              "value": "={{ $json.body.user_input_data[0].answer }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "da137410-01f3-4747-a991-13436a1e6d95",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -832,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "measurements",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "imageUrl",
+              "value": "={{ $('Workflow Configuration').first().json.imageUrlField }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "processedAt",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "status",
+              "value": "processed",
+              "type": "string"
+            },
+            {
+              "id": "a02355f2-1742-460b-901a-99fa073fde2e",
+              "name": "=items",
+              "value": "={{ JSON.parse($json.content.parts[0].text.replace(/```json\\n/g, '').replace(/```/g, '')).items }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cb8574d4-65cb-4dc1-9fdb-e3914bb79f4d",
+      "name": "Format Measurement Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://botsailor.com/api/v1/whatsapp/subscriber/chat/assign-custom-fields",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "apiToken",
+              "value": "17624|mrHKuEUJ3ugTwXrKNcPu3hmhj9wcxoY2YHTSbrE3048e937d"
+            },
+            {
+              "name": "phone_number_id",
+              "value": "967736983089856"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{ $('Webhook1').item.json.body.chat_id }}"
+            },
+            {
+              "name": "custom_fields",
+              "value": "={{ JSON.stringify({ pending_quote_data: JSON.stringify($json.items) }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-botsailor-custom-fields",
+      "name": "Update BotSailor Variables",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        896,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://botsailor.com/api/v1/whatsapp/send",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"apiToken\": \"17624|mrHKuEUJ3ugTwXrKNcPu3hmhj9wcxoY2YHTSbrE3048e937d\",\n  \"phone_number_id\": \"967736983089856\",\n  \"phone_number\": \"{{ $('Webhook1').item.json.body.chat_id }}\",\n  \"message\": \"Please confirm your glass details:\\n\\n{{ JSON.stringify($('Format Measurement Data').item.json.items, null, 2) }}\\n\\nClick the Confirm button below or reply YES to proceed.\"\n}",
+        "options": {}
+      },
+      "id": "send-botsailor-confirmation",
+      "name": "Send WhatsApp Confirmation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1120,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fa62af6e-b96a-413f-b6a9-c3c4c83b088d",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1088,
+        176
+      ],
+      "id": "aebabf00-4b2f-475d-87bb-26218e46d0c0",
+      "name": "Webhook",
+      "webhookId": "fa62af6e-b96a-413f-b6a9-c3c4c83b088d"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a technical data extractor for OWD Glass. Your job is to extract glass dimensions from unstructured WhatsApp messages.\n\nInput Message: {{ $json.message_text }}\n\nRules:\n\nExtract width and height in millimeters (mm).\n\nIf the user provides meters (e.g., 2m), convert to mm (2000).\n\nIf no glass type is mentioned, default to \"clear\".\n\nIf no thickness is mentioned, default to 6 for windows and 10 for showers/doors.\n\nIdentify the \"type\" (window, door, shower, mirror, repair).\n\nOutput Format (Return ONLY valid JSON):\n{\n\"items\": [\n{\n\"width_mm\": number,\n\"height_mm\": number,\n\"type\": \"string\",\n\"glassType\": \"string\",\n\"thickness\": number\n}\n]\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        160
+      ],
+      "id": "3514d3ea-becc-4230-a138-c9d0c3ef53ba",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fTA5h4sSgCbnGFHg",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "sifosman.app.n8n.cloud",
+            "content-length": "388",
+            "accept": "application/json",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2400:6180:0:d2:0:2:5a8e:4000",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9dd6e48448dd2fbd-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "2400:6180:0:d2:0:2:5a8e:4000, 172.71.152.81",
+            "x-forwarded-host": "sifosman.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-40-88d9967ff-qt8kz",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2400:6180:0:d2:0:2:5a8e:4000"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "first_name": "OWD",
+            "chat_id": "27658475289",
+            "user_location_gps": "{\"latitude\":-25.8249332,\"longitude\":28.1467276}",
+            "user_input_data": [
+              {
+                "question": "Great, please send me the image of your measurement now.",
+                "answer": "https://bot-data.s3.ap-southeast-1.wasabisys.com/upload/livechat/2026/3/whatsapp/248339-324783-1980759066184664.jpeg"
+              }
+            ],
+            "whatsapp_bot_username": "+27 66 307 7449"
+          },
+          "webhookUrl": "https://sifosman.app.n8n.cloud/webhook/521d5a1d-f594-4cf0-947a-9bfdfac8e8b2",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Measurement Data": {
+      "main": [
+        [
+          {
+            "node": "Update BotSailor Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update BotSailor Variables": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Confirmation": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Format Measurement Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "865370f2-1d1d-479b-b8f1-9d752c102654",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33f53a3b4d83000e68c4b5697f5022c173f43db99cc93da8da17684fff98fab1"
+  },
+  "id": "6oKsJ38Jz41csKDY",
+  "tags": []
+}

@@ -52,6 +52,44 @@ export class BotSailorService {
     }
   }
 
+  async sendInvoiceToWhatsApp(whatsappUserId: string, pdfUrl: string, quoteReference: string): Promise<void> {
+    try {
+      const message = `✅ *Payment Received - OWD Glass*\n\nThank you for your deposit payment for Quote ${quoteReference}!\n\n📋 Your official invoice/receipt is attached.\n\nOur scheduling team will contact you shortly to arrange the installation.\n\nQuestions? Contact us:\n📧 info@owdglass.co.za\n📞 +27 12 345 6789\n\nOWD Glass - Professional Glazing Solutions`;
+
+      const payload = {
+        apiToken: this.apiKey,
+        phone_number_id: this.phoneNumberId,
+        message: message,
+        phone_number: whatsappUserId,
+        type: "file",
+        file: {
+          url: pdfUrl,
+          filename: `${quoteReference}-invoice.pdf`
+        }
+      };
+
+      const endpoint = `${this.baseUrl}/api/v1/whatsapp/send`.replace(/\/+/g, '/');
+
+      const response = await axios.post(endpoint, payload);
+
+      if (response.data.status !== "1") {
+        throw new Error(`BotSailor API returned status: ${response.data.message}`);
+      }
+
+      console.log(`Invoice PDF for quote ${quoteReference} sent successfully to ${whatsappUserId}`);
+      
+    } catch (error) {
+      console.error('Error sending invoice PDF via BotSailor:', error);
+      
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        throw new Error(`Failed to send WhatsApp message: ${errorMessage}`);
+      }
+      
+      throw new Error('Failed to send WhatsApp message via BotSailor');
+    }
+  }
+
   async sendPaymentConfirmation(whatsappUserId: string, referenceNumber: string, amount: number): Promise<void> {
     try {
       const message = `✅ *Payment Received - OWD Glass*\n\nThank you for your payment!\n\n📋 Reference: ${referenceNumber}\n💰 Amount Paid: R${amount.toFixed(2)}\n\nOne of our expert technicians will contact you within 2 hours to schedule your repair assessment.\n\n🔧 What happens next:\n• We'll call you to arrange a convenient time\n• Our technician will assess the damage on-site\n• You'll receive an official quote for the repair work\n\nQuestions? Contact us:\n📧 info@owdglass.co.za\n📞 +27 12 345 6789\n\nOWD Glass - Professional Glazing Solutions`;

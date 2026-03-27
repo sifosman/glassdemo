@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GlassQuoteService } from '@/services/glassQuoteService';
 import { BotSailorService } from '@/services/botSailorService';
 import { DatabaseService } from '@/services/databaseService';
+import { PDFService } from '@/services/pdfService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,12 +28,23 @@ export async function POST(request: NextRequest) {
     // Initialize services
     const quoteService = new GlassQuoteService();
     const botSailorService = new BotSailorService();
+    const pdfService = new PDFService();
     
     // Calculate quote
     const quote = await quoteService.calculateQuote(customer, items);
     
     // Save quote to Supabase
     await DatabaseService.saveQuote(quote);
+    
+    // Generate and save Quote PDF
+    try {
+      const quotePdfBuffer = await pdfService.generateQuotePDF(quote);
+      const quotePdfUrl = await pdfService.savePDF(quotePdfBuffer, quote.quoteNumber);
+      await DatabaseService.updateQuotePdfUrl(quote.quoteNumber, quotePdfUrl);
+    } catch (pdfError) {
+      console.error('Failed to generate or save Quote PDF:', pdfError);
+      // Proceed even if PDF generation fails
+    }
     
     // Generate quote URL
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app';

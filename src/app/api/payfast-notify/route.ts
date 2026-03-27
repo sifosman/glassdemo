@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { BotSailorService } from '@/services/botSailorService';
+import { PDFService } from '@/services/pdfService';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -25,20 +26,63 @@ const TEAM_EMAIL = process.env.TEAM_EMAIL || 'team@owdglass.co.za';
 // PayFast configuration
 const PAYFAST_PASSPHRASE = process.env.PAYFAST_PASSPHRASE || '';
 
+// PayFast required parameter order for signature generation
+const PAYFAST_FIELD_ORDER = [
+  'merchant_id',
+  'merchant_key',
+  'return_url',
+  'cancel_url',
+  'notify_url',
+  'name_first',
+  'name_last',
+  'email_address',
+  'cell_number',
+  'm_payment_id',
+  'amount',
+  'item_name',
+  'item_description',
+  'custom_int1',
+  'custom_int2',
+  'custom_int3',
+  'custom_int4',
+  'custom_int5',
+  'custom_str1',
+  'custom_str2',
+  'custom_str3',
+  'custom_str4',
+  'custom_str5',
+  'subscription_type',
+  'billing_date',
+  'frequency',
+  'cycles',
+  'subscription_notify_email',
+  'subscription_notify_buyer',
+];
+
+function buildPayFastParamString(data: Record<string, string>): string {
+  // Build param string in PayFast's required order (not alphabetical)
+  const params: string[] = [];
+
+  for (const key of PAYFAST_FIELD_ORDER) {
+    const value = data[key];
+    if (value !== undefined && value !== null && value !== '') {
+      params.push(`${key}=${encodeURIComponent(value).replace(/%20/g, '+')}`);
+    }
+  }
+
+  return params.join('&');
+}
+
 function verifySignature(data: Record<string, string>, signature: string, passphrase: string): boolean {
-  // Create parameter string (exclude signature itself)
-  const paramString = Object.keys(data)
-    .filter(key => key !== 'signature')
-    .sort()
-    .map(key => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}`)
-    .join('&');
-  
-  // Add passphrase
-  const stringToHash = `${paramString}&passphrase=${passphrase}`;
-  
-  // Generate MD5 hash
-  const calculatedSignature = crypto.createHash('md5').update(stringToHash).digest('hex');
-  
+  let paramString = buildPayFastParamString(data);
+  const normalizedPassphrase = passphrase.trim();
+
+  if (normalizedPassphrase) {
+    paramString += `&passphrase=${encodeURIComponent(normalizedPassphrase).replace(/%20/g, '+')}`;
+  }
+
+  const calculatedSignature = crypto.createHash('md5').update(paramString).digest('hex');
+
   return calculatedSignature === signature;
 }
 
@@ -188,45 +232,134 @@ export async function POST(request: NextRequest) {
 
     // Extract data
     const referenceNumber = data.custom_str1;
-    const repairRequestId = data.custom_str2;
+    const recordId = data.custom_str2;
+    const paymentType = data.custom_str3 || 'repair';
     const pfPaymentId = data.pf_payment_id;
     const paymentStatus = data.payment_status;
     const amountGross = parseFloat(data.amount_gross || '0');
     const amountFee = parseFloat(data.amount_fee || '0');
     const amountNet = parseFloat(data.amount_net || '0');
 
-    if (!referenceNumber || !repairRequestId) {
+    if (!referenceNumber || !recordId) {
       return NextResponse.json({ error: 'Missing reference data' }, { status: 400 });
     }
 
     // Store payment record
-    const { error: paymentError } = await supabase
-      .from('payfast_payments')
-      .insert({
-        repair_request_id: repairRequestId,
-        pf_payment_id: pfPaymentId,
-        payment_status: paymentStatus,
-        amount_gross: amountGross,
-        amount_fee: amountFee,
-        amount_net: amountNet,
-        payfast_signature: data.signature,
-        merchant_id: data.merchant_id,
-        signature_match: true, // Set based on verification above
-        raw_payload: data,
-        received_at: new Date().toISOString(),
-      });
+    if (paymentType === 'repair') {
+      const { error: paymentError } = await supabase
+        .from('payfast_payments')
+        .insert({
+          repair_request_id: recordId,
+          pf_payment_id: pfPaymentId,
+          payment_status: paymentStatus,
+          amount_gross: amountGross,
+          amount_fee: amountFee,
+          amount_net: amountNet,
+          payfast_signature: data.signature,
+          merchant_id: data.merchant_id,
+          signature_match: true,
+          raw_payload: data,
+          received_at: new Date().toISOString(),
+        });
 
-    if (paymentError) {
-      console.error('Failed to store payment record:', paymentError);
+      if (paymentError) {
+        console.error('Failed to store payment record:', paymentError);
+      }
     }
 
     // Only process if payment is complete
     if (paymentStatus === 'COMPLETE') {
+      if (paymentType === 'quote') {
+        const { data: quoteRecord, error: quoteError } = await supabase
+          .from('quotes')
+          .select('*')
+          .eq('id', recordId)
+          .single();
+
+        if (quoteError || !quoteRecord) {
+          console.error('Failed to fetch quote record:', quoteError);
+          return NextResponse.json({ error: 'Quote not found' }, { status: 404 });
+        }
+
+        const depositPaid = Number(quoteRecord.deposit_paid || 0) + amountGross;
+        const depositAmount = Number(quoteRecord.deposit_amount || 0);
+        const status = depositPaid >= depositAmount ? 'accepted' : quoteRecord.status;
+
+        const { error: updateError } = await supabase
+          .from('quotes')
+          .update({
+            deposit_paid: depositPaid,
+            deposit_paid_at: new Date().toISOString(),
+            status,
+            accepted_at: status === 'accepted' ? new Date().toISOString() : quoteRecord.accepted_at,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', recordId);
+
+        if (updateError) {
+          console.error('Failed to update quote:', updateError);
+          return NextResponse.json({ error: 'Failed to update quote status' }, { status: 500 });
+        }
+
+        // Generate and send Invoice via WhatsApp
+        try {
+          // Import DatabaseService inside the block to avoid circular dependencies or use it properly
+          const { DatabaseService } = await import('@/services/databaseService');
+          const fullQuote = await DatabaseService.getQuote(quoteRecord.quote_number);
+          
+          if (fullQuote) {
+            // Provide updated deposit paid amount to the PDF service
+            fullQuote.depositPaid = depositPaid;
+            
+            const pdfService = new PDFService();
+            const invoiceBuffer = await pdfService.generateInvoicePDF(fullQuote, { pf_payment_id: pfPaymentId });
+            
+            const pdfUrl = await pdfService.savePDF(invoiceBuffer, fullQuote.quoteNumber, true);
+            
+            // Save invoice to database
+            await DatabaseService.createInvoice({
+              quote_number: fullQuote.quoteNumber,
+              customer_name: fullQuote.customer.name,
+              customer_phone: fullQuote.customer.phone || quoteRecord.customer_phone,
+              customer_email: fullQuote.customer.email,
+              billing_address: fullQuote.customer.address,
+              subtotal: fullQuote.subtotal,
+              vat_amount: fullQuote.vatAmount,
+              total: fullQuote.total,
+              amount_paid: amountGross,
+              balance_due: fullQuote.total - depositPaid,
+              pdf_url: pdfUrl
+            });
+
+            const botSailorService = new BotSailorService();
+            // Since we need whatsappUserId, we fallback to customer_phone if available
+            const whatsappUserId = fullQuote.customer.phone || quoteRecord.customer_phone;
+            
+            if (whatsappUserId) {
+              await botSailorService.sendInvoiceToWhatsApp(
+                whatsappUserId,
+                pdfUrl,
+                fullQuote.quoteNumber
+              );
+              console.log('Invoice WhatsApp message sent successfully');
+            } else {
+              console.warn('No WhatsApp user ID found to send invoice');
+            }
+          }
+        } catch (invoiceError) {
+          console.error('Failed to generate or send invoice:', invoiceError);
+          // Do not fail the transaction if WhatsApp sending fails
+        }
+
+        console.log('Quote deposit processed successfully:', referenceNumber);
+        return NextResponse.json({ success: true });
+      }
+
       // Fetch repair request details
       const { data: repairRequest, error: repairError } = await supabase
         .from('repair_requests')
         .select('*')
-        .eq('id', repairRequestId)
+        .eq('id', recordId)
         .single();
 
       if (repairError || !repairRequest) {
@@ -243,7 +376,7 @@ export async function POST(request: NextRequest) {
           paid_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', repairRequestId);
+        .eq('id', recordId);
 
       if (updateError) {
         console.error('Failed to update repair request:', updateError);
@@ -278,7 +411,7 @@ export async function POST(request: NextRequest) {
             team_notified: true,
             notification_sent_at: new Date().toISOString(),
           })
-          .eq('id', repairRequestId);
+          .eq('id', recordId);
       }
 
       console.log('Payment processed successfully:', referenceNumber);

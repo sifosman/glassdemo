@@ -6,6 +6,15 @@ type QuoteRecord = Database['public']['Tables']['quotes']['Row'];
 type QuoteItem = Database['public']['Tables']['quote_items']['Row'];
 type Product = Database['public']['Tables']['products']['Row'];
 
+type QuoteWithPaymentDetails = Quote & {
+  status: string;
+  depositRequired: number;
+  depositAmount: number;
+  depositPaid: number;
+  depositPaidAt?: string;
+  acceptedAt?: string;
+};
+
 export class DatabaseService {
   // Save a complete quote with customer and items
   static async saveQuote(quote: Quote): Promise<string> {
@@ -45,6 +54,9 @@ export class DatabaseService {
       }
 
       // Create the quote
+      const depositRequired = 50;
+      const depositAmount = Number((quote.total * (depositRequired / 100)).toFixed(2));
+
       const { data: newQuote, error: quoteError } = await supabase
         .from('quotes')
         .insert({
@@ -62,6 +74,9 @@ export class DatabaseService {
           discount_percent: quote.discountPercent,
           discount_amount: quote.discountAmount,
           total: quote.total,
+          deposit_required: depositRequired,
+          deposit_amount: depositAmount,
+          deposit_paid: 0,
           status: 'sent',
           source: 'whatsapp',
           expiry_date: quote.expiryDate
@@ -72,16 +87,23 @@ export class DatabaseService {
       if (quoteError) throw quoteError;
 
       // Create quote items
-      const quoteItems = quote.items.map(item => ({
-        quote_id: newQuote.id,
-        product_id: null, // We'll need to find the product ID
-        description: item.description,
-        quantity: item.quantity,
-        width_mm: parseInt(item.size_mm.split(' x ')[0]),
-        height_mm: parseInt(item.size_mm.split(' x ')[1]),
-        unit_price: item.unitPrice,
-        line_total: item.totalPrice
-      }));
+      const quoteItems = quote.items.map(item => {
+        const hasDimensions = item.size_mm.includes(' x ');
+        const [widthValue, heightValue] = hasDimensions
+          ? item.size_mm.split(' x ')
+          : ['0', '0'];
+
+        return {
+          quote_id: newQuote.id,
+          product_id: null, // We'll need to find the product ID
+          description: item.description,
+          quantity: item.quantity,
+          width_mm: parseInt(widthValue, 10),
+          height_mm: parseInt(heightValue, 10),
+          unit_price: item.unitPrice,
+          line_total: item.totalPrice
+        };
+      });
 
       // Find product IDs for each item
       for (let i = 0; i < quoteItems.length; i++) {
@@ -110,7 +132,7 @@ export class DatabaseService {
   }
 
   // Get a complete quote by reference number
-  static async getQuote(quoteNumber: string): Promise<Quote | null> {
+  static async getQuote(quoteNumber: string): Promise<QuoteWithPaymentDetails | null> {
     try {
       // Get the quote with customer
       const { data: quoteData, error: quoteError } = await supabase
@@ -153,7 +175,7 @@ export class DatabaseService {
       if (itemsError) throw itemsError;
 
       // Transform the data to match our Quote interface
-      const transformedQuote: Quote = {
+      const transformedQuote: QuoteWithPaymentDetails = {
         quoteNumber: quoteData.quote_number,
         customer: {
           name: quoteData.customers.name,
@@ -211,7 +233,13 @@ export class DatabaseService {
         requiresSafetyGlass: quoteData.requires_safety_glass,
         safetyReason: quoteData.safety_reason || undefined,
         createdDate: quoteData.created_at,
-        expiryDate: quoteData.expiry_date || ''
+        expiryDate: quoteData.expiry_date || '',
+        status: quoteData.status,
+        depositRequired: quoteData.deposit_required,
+        depositAmount: quoteData.deposit_amount,
+        depositPaid: quoteData.deposit_paid,
+        depositPaidAt: quoteData.deposit_paid_at || undefined,
+        acceptedAt: quoteData.accepted_at || undefined
       };
 
       return transformedQuote;
@@ -235,6 +263,69 @@ export class DatabaseService {
       if (error) throw error;
     } catch (error) {
       console.error('Error updating quote status:', error);
+      throw error;
+    }
+  }
+
+  // Update quote PDF URL
+  static async updateQuotePdfUrl(quoteNumber: string, pdfUrl: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('quotes')
+        .update({ pdf_url: pdfUrl })
+        .eq('quote_number', quoteNumber);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating quote PDF URL:', error);
+      throw error;
+    }
+  }
+
+  // Create an invoice
+  static async createInvoice(invoiceData: any): Promise<void> {
+    try {
+      // First find the quote to get the IDs
+      const { data: quote, error: quoteError } = await supabase
+        .from('quotes')
+        .select('id, customer_id')
+        .eq('quote_number', invoiceData.quote_number)
+        .single();
+
+      if (quoteError) throw quoteError;
+
+      // Generate a unique invoice number
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const invoiceNumber = `INV${year}${month}-${random}`;
+
+      const { error } = await supabase
+        .from('invoices')
+        .insert({
+          invoice_number: invoiceNumber,
+          quote_id: quote.id,
+          quote_number: invoiceData.quote_number,
+          customer_id: quote.customer_id,
+          customer_name: invoiceData.customer_name,
+          customer_phone: invoiceData.customer_phone,
+          customer_email: invoiceData.customer_email,
+          billing_address: invoiceData.billing_address,
+          invoice_type: 'deposit',
+          subtotal: invoiceData.subtotal,
+          vat_amount: invoiceData.vat_amount,
+          total: invoiceData.total,
+          amount_paid: invoiceData.amount_paid,
+          balance_due: invoiceData.balance_due,
+          status: 'paid',
+          pdf_url: invoiceData.pdf_url,
+          paid_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error creating invoice:', error);
       throw error;
     }
   }

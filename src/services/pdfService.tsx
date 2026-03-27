@@ -264,7 +264,7 @@ export class PDFService {
       content += `Description\t\tSize\t\tPrice\n`;
       content += `------------------------------------------------\n`;
       
-      quote.items.forEach(item => {
+      quote.items.forEach((item: any) => {
         content += `${item.description}\t${item.size_mm}\tR ${item.totalPrice.toFixed(2)}\n`;
       });
       
@@ -278,7 +278,48 @@ export class PDFService {
     }
   }
 
-  async savePDF(pdfBuffer: Buffer, referenceNumber: string): Promise<string> {
+  async generateInvoicePDF(quote: any, paymentData: any): Promise<Buffer> {
+    try {
+      const depositPaid = Number(quote.depositPaid || quote.depositAmount || 0);
+      const remainingBalance = quote.total - depositPaid;
+      
+      let content = `INVOICE / RECEIPT\n`;
+      content += `=================\n\n`;
+      content += `Quote Reference: ${quote.quoteNumber}\n`;
+      content += `Transaction Ref: ${paymentData.pf_payment_id || 'N/A'}\n`;
+      content += `Date: ${new Date().toLocaleDateString('en-ZA')}\n\n`;
+      
+      content += `CUSTOMER DETAILS:\n`;
+      content += `Name: ${quote.customer.name}\n`;
+      content += `Email: ${quote.customer.email}\n`;
+      content += `Address: ${quote.customer.address}\n\n`;
+      
+      content += `PAYMENT SUMMARY:\n`;
+      content += `Total Quote Value: R ${quote.total.toFixed(2)}\n`;
+      content += `Deposit Received (50%): R ${depositPaid.toFixed(2)}\n`;
+      content += `Remaining Balance: R ${remainingBalance.toFixed(2)}\n\n`;
+      
+      content += `ITEMS:\n`;
+      content += `Description\t\tSize\t\tPrice\n`;
+      content += `------------------------------------------------\n`;
+      
+      quote.items.forEach((item: any) => {
+        content += `${item.description}\t${item.size_mm}\tR ${item.totalPrice.toFixed(2)}\n`;
+      });
+      
+      content += `\nThank you for your payment!\n`;
+      content += `The remaining balance of R ${remainingBalance.toFixed(2)} is due upon completion of installation.\n`;
+      content += `SANS 10400-N Compliant. All prices include VAT.\n`;
+      
+      return Buffer.from(content, 'utf8');
+      
+    } catch (error) {
+      console.error('Error generating Invoice PDF:', error);
+      throw new Error('Failed to generate Invoice PDF');
+    }
+  }
+
+  async savePDF(pdfBuffer: Buffer, referenceNumber: string, isInvoice: boolean = false): Promise<string> {
     try {
       // Debug: log the type of pdfBuffer
       console.log('pdfBuffer type:', typeof pdfBuffer);
@@ -292,7 +333,7 @@ export class PDFService {
       }
 
       // Save PDF file
-      const fileName = `${referenceNumber}.pdf`;
+      const fileName = isInvoice ? `${referenceNumber}-invoice.pdf` : `${referenceNumber}.pdf`;
       const filePath = path.join(quotesDir, fileName);
       fs.writeFileSync(filePath, pdfBuffer);
 
