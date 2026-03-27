@@ -11,6 +11,8 @@ interface Quote {
     address: string;
     phone?: string;
   };
+  pdfUrl?: string;
+  invoicePdfUrl?: string;
   items: Array<{
     description: string;
     quantity: number;
@@ -149,8 +151,8 @@ export default function QuotePage() {
     if (!quote) return;
     
     // Check if the quote has a PDF URL
-    if ((quote as any).pdfUrl) {
-      window.open((quote as any).pdfUrl, '_blank');
+    if (quote.pdfUrl) {
+      window.open(quote.pdfUrl, '_blank');
       return;
     }
     
@@ -168,7 +170,11 @@ export default function QuotePage() {
       // we can try to directly access it by convention if the pdfUrl is missing.
       const origin = window.location.origin;
       const fallbackPdfUrl = `${origin}/quotes/${quote.quoteNumber}.pdf`;
-      window.open(fallbackPdfUrl, '_blank');
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const storageFallbackUrl = supabaseUrl
+        ? `${supabaseUrl}/storage/v1/object/public/documents/quotes/${quote.quoteNumber}.pdf`
+        : null;
+      window.open(storageFallbackUrl ?? fallbackPdfUrl, '_blank');
       
     } catch (error) {
       console.error('Error opening PDF:', error);

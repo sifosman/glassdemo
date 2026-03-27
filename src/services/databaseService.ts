@@ -13,6 +13,8 @@ type QuoteWithPaymentDetails = Quote & {
   depositPaid: number;
   depositPaidAt?: string;
   acceptedAt?: string;
+  pdfUrl?: string;
+  invoicePdfUrl?: string;
 };
 
 export class DatabaseService {
@@ -174,6 +176,16 @@ export class DatabaseService {
 
       if (itemsError) throw itemsError;
 
+      const { data: invoicesData, error: invoicesError } = await supabase
+        .from('invoices')
+        .select('pdf_url')
+        .eq('quote_id', quoteData.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (invoicesError) throw invoicesError;
+      const invoicePdfUrl = invoicesData?.[0]?.pdf_url || undefined;
+
       // Transform the data to match our Quote interface
       const transformedQuote: QuoteWithPaymentDetails = {
         quoteNumber: quoteData.quote_number,
@@ -234,6 +246,8 @@ export class DatabaseService {
         safetyReason: quoteData.safety_reason || undefined,
         createdDate: quoteData.created_at,
         expiryDate: quoteData.expiry_date || '',
+        pdfUrl: quoteData.pdf_url || undefined,
+        invoicePdfUrl,
         status: quoteData.status,
         depositRequired: quoteData.deposit_required,
         depositAmount: quoteData.deposit_amount,
@@ -268,11 +282,11 @@ export class DatabaseService {
   }
 
   // Update quote PDF URL
-  static async updateQuotePdfUrl(quoteNumber: string, pdfUrl: string): Promise<void> {
+  static async updateQuotePdfUrl(quoteNumber: string, pdfUrl: string, storagePath?: string): Promise<void> {
     try {
       const { error } = await supabase
         .from('quotes')
-        .update({ pdf_url: pdfUrl })
+        .update({ pdf_url: pdfUrl, ...(storagePath ? { pdf_storage_path: storagePath } : {}) })
         .eq('quote_number', quoteNumber);
 
       if (error) throw error;
@@ -320,6 +334,7 @@ export class DatabaseService {
           balance_due: invoiceData.balance_due,
           status: 'paid',
           pdf_url: invoiceData.pdf_url,
+          ...(invoiceData.pdf_storage_path ? { pdf_storage_path: invoiceData.pdf_storage_path } : {}),
           paid_at: new Date().toISOString()
         });
 

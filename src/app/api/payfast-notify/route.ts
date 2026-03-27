@@ -26,44 +26,14 @@ const TEAM_EMAIL = process.env.TEAM_EMAIL || 'team@owdglass.co.za';
 // PayFast configuration
 const PAYFAST_PASSPHRASE = process.env.PAYFAST_PASSPHRASE || '';
 
-// PayFast required parameter order for signature generation
-const PAYFAST_FIELD_ORDER = [
-  'merchant_id',
-  'merchant_key',
-  'return_url',
-  'cancel_url',
-  'notify_url',
-  'name_first',
-  'name_last',
-  'email_address',
-  'cell_number',
-  'm_payment_id',
-  'amount',
-  'item_name',
-  'item_description',
-  'custom_int1',
-  'custom_int2',
-  'custom_int3',
-  'custom_int4',
-  'custom_int5',
-  'custom_str1',
-  'custom_str2',
-  'custom_str3',
-  'custom_str4',
-  'custom_str5',
-  'subscription_type',
-  'billing_date',
-  'frequency',
-  'cycles',
-  'subscription_notify_email',
-  'subscription_notify_buyer',
-];
+function buildPayFastItnParamString(data: Record<string, string>): string {
+  const keys = Object.keys(data)
+    .filter(key => key !== 'signature')
+    .sort();
 
-function buildPayFastParamString(data: Record<string, string>): string {
-  // Build param string in PayFast's required order (not alphabetical)
   const params: string[] = [];
 
-  for (const key of PAYFAST_FIELD_ORDER) {
+  for (const key of keys) {
     const value = data[key];
     if (value !== undefined && value !== null && value !== '') {
       params.push(`${key}=${encodeURIComponent(value).replace(/%20/g, '+')}`);
@@ -73,8 +43,11 @@ function buildPayFastParamString(data: Record<string, string>): string {
   return params.join('&');
 }
 
-function verifySignature(data: Record<string, string>, signature: string, passphrase: string): boolean {
-  let paramString = buildPayFastParamString(data);
+function verifySignature(data: Record<string, string>, passphrase: string): boolean {
+  const signature = data.signature;
+  if (!signature) return false;
+
+  let paramString = buildPayFastItnParamString(data);
   const normalizedPassphrase = passphrase.trim();
 
   if (normalizedPassphrase) {
@@ -220,13 +193,11 @@ export async function POST(request: NextRequest) {
 
     console.log('PayFast notification received:', data);
 
-    // Verify signature (in sandbox, this might be skipped)
-    if (PAYFAST_PASSPHRASE && data.signature) {
-      const isValid = verifySignature(data, data.signature, PAYFAST_PASSPHRASE);
+    // Verify signature (in sandbox, you may opt to log instead of rejecting)
+    if (data.signature) {
+      const isValid = verifySignature(data, PAYFAST_PASSPHRASE);
       if (!isValid) {
         console.error('PayFast signature verification failed');
-        // In production, you should reject this. For now, we'll log and continue.
-        // return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
       }
     }
 
@@ -314,7 +285,7 @@ export async function POST(request: NextRequest) {
             const pdfService = new PDFService();
             const invoiceBuffer = await pdfService.generateInvoicePDF(fullQuote, { pf_payment_id: pfPaymentId });
             
-            const pdfUrl = await pdfService.savePDF(invoiceBuffer, fullQuote.quoteNumber, true);
+            const { pdfUrl, storagePath } = await pdfService.savePDF(invoiceBuffer, fullQuote.quoteNumber, true);
             
             // Save invoice to database
             await DatabaseService.createInvoice({
@@ -328,12 +299,13 @@ export async function POST(request: NextRequest) {
               total: fullQuote.total,
               amount_paid: amountGross,
               balance_due: fullQuote.total - depositPaid,
-              pdf_url: pdfUrl
+              pdf_url: pdfUrl,
+              pdf_storage_path: storagePath
             });
 
             const botSailorService = new BotSailorService();
             // Since we need whatsappUserId, we fallback to customer_phone if available
-            const whatsappUserId = fullQuote.customer.phone || quoteRecord.customer_phone;
+            const whatsappUserId = data.custom_str4 || fullQuote.customer.phone || quoteRecord.customer_phone;
             
             if (whatsappUserId) {
               await botSailorService.sendInvoiceToWhatsApp(

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Font, pdf } from '@react-pdf/renderer';
 import { Quote } from './glassQuoteService';
 import fs from 'fs';
 import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
 // Register fonts (optional - you can add custom fonts here)
 Font.register({
@@ -242,35 +243,37 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({ quote }) => (
 );
 
 export class PDFService {
+  private async toNodeBuffer(value: unknown): Promise<Buffer> {
+    if (Buffer.isBuffer(value)) {
+      return value;
+    }
+
+    if (value instanceof Uint8Array) {
+      return Buffer.from(value);
+    }
+
+    const maybeStream = value as { getReader?: () => { read: () => Promise<{ done: boolean; value?: Uint8Array }> } };
+    if (maybeStream && typeof maybeStream.getReader === 'function') {
+      const reader = maybeStream.getReader();
+      const chunks: Buffer[] = [];
+
+      while (true) {
+        const { done, value: chunk } = await reader.read();
+        if (done) break;
+        if (chunk) chunks.push(Buffer.from(chunk));
+      }
+
+      return Buffer.concat(chunks);
+    }
+
+    throw new Error('Failed to convert PDF output to Buffer');
+  }
+
   async generateQuotePDF(quote: Quote): Promise<Buffer> {
     try {
-      // For now, generate a simple text-based quote as a buffer
-      // We'll replace this with proper PDF generation once the basic API works
-      
-      let content = `QUOTE: ${quote.quoteNumber}\n`;
-      content += `Date: ${new Date(quote.createdDate).toLocaleDateString('en-ZA')}\n\n`;
-      content += `CUSTOMER DETAILS:\n`;
-      content += `Name: ${quote.customer.name}\n`;
-      content += `Email: ${quote.customer.email}\n`;
-      content += `Address: ${quote.customer.address}\n\n`;
-      content += `QUOTE SUMMARY:\n`;
-      content += `Subtotal: R ${quote.subtotal.toFixed(2)}\n`;
-      if (quote.discountAmount > 0) {
-        content += `Discount (${quote.discountPercent}%): R ${quote.discountAmount.toFixed(2)}\n`;
-      }
-      content += `VAT (${quote.vatRate}%): R ${quote.vatAmount.toFixed(2)}\n`;
-      content += `TOTAL: R ${quote.total.toFixed(2)}\n\n`;
-      content += `ITEMS:\n`;
-      content += `Description\t\tSize\t\tPrice\n`;
-      content += `------------------------------------------------\n`;
-      
-      quote.items.forEach((item: any) => {
-        content += `${item.description}\t${item.size_mm}\tR ${item.totalPrice.toFixed(2)}\n`;
-      });
-      
-      content += `\nQuote valid for 10 days. SANS 10400-N Compliant.\n`;
-      
-      return Buffer.from(content, 'utf8');
+      const instance = pdf(<QuoteDocument quote={quote} />);
+      const output = await instance.toBuffer();
+      return await this.toNodeBuffer(output);
       
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -283,35 +286,99 @@ export class PDFService {
       const depositPaid = Number(quote.depositPaid || quote.depositAmount || 0);
       const remainingBalance = quote.total - depositPaid;
       
-      let content = `INVOICE / RECEIPT\n`;
-      content += `=================\n\n`;
-      content += `Quote Reference: ${quote.quoteNumber}\n`;
-      content += `Transaction Ref: ${paymentData.pf_payment_id || 'N/A'}\n`;
-      content += `Date: ${new Date().toLocaleDateString('en-ZA')}\n\n`;
-      
-      content += `CUSTOMER DETAILS:\n`;
-      content += `Name: ${quote.customer.name}\n`;
-      content += `Email: ${quote.customer.email}\n`;
-      content += `Address: ${quote.customer.address}\n\n`;
-      
-      content += `PAYMENT SUMMARY:\n`;
-      content += `Total Quote Value: R ${quote.total.toFixed(2)}\n`;
-      content += `Deposit Received (50%): R ${depositPaid.toFixed(2)}\n`;
-      content += `Remaining Balance: R ${remainingBalance.toFixed(2)}\n\n`;
-      
-      content += `ITEMS:\n`;
-      content += `Description\t\tSize\t\tPrice\n`;
-      content += `------------------------------------------------\n`;
-      
-      quote.items.forEach((item: any) => {
-        content += `${item.description}\t${item.size_mm}\tR ${item.totalPrice.toFixed(2)}\n`;
-      });
-      
-      content += `\nThank you for your payment!\n`;
-      content += `The remaining balance of R ${remainingBalance.toFixed(2)} is due upon completion of installation.\n`;
-      content += `SANS 10400-N Compliant. All prices include VAT.\n`;
-      
-      return Buffer.from(content, 'utf8');
+      const transactionRef = paymentData?.pf_payment_id || 'N/A';
+      const invoiceNumber = paymentData?.invoice_number || `INV-${quote.quoteNumber}`;
+
+      const InvoiceDocument = (
+        <Document>
+          <Page size="A4" style={styles.page}>
+            <View style={styles.header}>
+              <Text style={styles.businessName}>OWD Glass</Text>
+              <Text style={styles.businessInfo}>Professional Glazing Solutions | SANS 10400-N Compliant</Text>
+              <Text style={styles.businessInfo}>Email: info@owdglass.co.za | Phone: +27 12 345 6789</Text>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.quoteReference}>Invoice: {invoiceNumber}</Text>
+              <Text>Quote Reference: {quote.quoteNumber}</Text>
+              <Text>Transaction Ref: {transactionRef}</Text>
+              <Text>Date: {new Date().toLocaleDateString('en-ZA')}</Text>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Customer Details</Text>
+              <View style={styles.customerInfo}>
+                <Text style={styles.bold}>Name: {quote.customer.name}</Text>
+                <Text>Email: {quote.customer.email}</Text>
+                <Text>Address: {quote.customer.address}</Text>
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Payment Summary</Text>
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total Quote Value:</Text>
+                <Text style={styles.totalValue}>R {quote.total.toFixed(2)}</Text>
+              </View>
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Deposit Received (50%):</Text>
+                <Text style={styles.totalValue}>R {depositPaid.toFixed(2)}</Text>
+              </View>
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Remaining Balance:</Text>
+                <Text style={styles.totalValue}>R {remainingBalance.toFixed(2)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Items</Text>
+              <View style={styles.table}>
+                <View style={styles.tableHeader}>
+                  <View style={[styles.tableCol, styles.description]}>
+                    <Text style={styles.bold}>Description</Text>
+                  </View>
+                  <View style={[styles.tableCol, styles.quantity]}>
+                    <Text style={styles.bold}>Qty</Text>
+                  </View>
+                  <View style={[styles.tableCol, styles.size]}>
+                    <Text style={styles.bold}>Size (mm)</Text>
+                  </View>
+                  <View style={[styles.tableColLast, styles.total]}>
+                    <Text style={styles.bold}>Total</Text>
+                  </View>
+                </View>
+
+                {quote.items.map((item: any, index: number) => (
+                  <View key={index} style={styles.tableRow}>
+                    <View style={[styles.tableCol, styles.description]}>
+                      <Text>{item.description}</Text>
+                    </View>
+                    <View style={[styles.tableCol, styles.quantity]}>
+                      <Text>{item.quantity}</Text>
+                    </View>
+                    <View style={[styles.tableCol, styles.size]}>
+                      <Text>{item.size_mm}</Text>
+                    </View>
+                    <View style={[styles.tableColLast, styles.total]}>
+                      <Text>R {item.totalPrice.toFixed(2)}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.footer}>
+              <Text>Thank you for your payment.</Text>
+              <Text>The remaining balance is due strictly upon completion of installation.</Text>
+              <Text>All prices include VAT.</Text>
+            </View>
+          </Page>
+        </Document>
+      );
+
+      const instance = pdf(InvoiceDocument);
+      const output = await instance.toBuffer();
+      return await this.toNodeBuffer(output);
       
     } catch (error) {
       console.error('Error generating Invoice PDF:', error);
@@ -319,27 +386,52 @@ export class PDFService {
     }
   }
 
-  async savePDF(pdfBuffer: Buffer, referenceNumber: string, isInvoice: boolean = false): Promise<string> {
+  async savePDF(
+    pdfBuffer: Buffer,
+    referenceNumber: string,
+    isInvoice: boolean = false
+  ): Promise<{ pdfUrl: string; storagePath: string; fileName: string }> {
     try {
-      // Debug: log the type of pdfBuffer
-      console.log('pdfBuffer type:', typeof pdfBuffer);
-      console.log('pdfBuffer constructor:', pdfBuffer.constructor.name);
-      console.log('is Buffer?:', Buffer.isBuffer(pdfBuffer));
-      
-      // Create quotes directory if it doesn't exist
+      const fileName = isInvoice ? `${referenceNumber}-invoice.pdf` : `${referenceNumber}.pdf`;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+      const supabaseKey =
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+      const bucket = process.env.SUPABASE_PDF_BUCKET || 'documents';
+      const folder = isInvoice ? 'invoices' : 'quotes';
+      const storagePath = `${folder}/${fileName}`;
+
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        });
+
+        const { error: uploadError } = await supabase.storage.from(bucket).upload(storagePath, pdfBuffer, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data } = supabase.storage.from(bucket).getPublicUrl(storagePath);
+        const pdfUrl = data.publicUrl;
+        return { pdfUrl, storagePath, fileName };
+      }
+
       const quotesDir = path.join(process.cwd(), 'public', 'quotes');
       if (!fs.existsSync(quotesDir)) {
         fs.mkdirSync(quotesDir, { recursive: true });
       }
 
-      // Save PDF file
-      const fileName = isInvoice ? `${referenceNumber}-invoice.pdf` : `${referenceNumber}.pdf`;
       const filePath = path.join(quotesDir, fileName);
       fs.writeFileSync(filePath, pdfBuffer);
 
-      // Return public URL
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-      return `${baseUrl}/quotes/${fileName}`;
+      return { pdfUrl: `${baseUrl}/quotes/${fileName}`, storagePath: `quotes/${fileName}`, fileName };
     } catch (error) {
       console.error('Error saving PDF:', error);
       throw new Error('Failed to save PDF');

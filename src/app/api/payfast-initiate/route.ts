@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
         custom_str1: reference_number,
         custom_str2: quote.id,
         custom_str3: 'quote',
+        custom_str4: quote.customer_phone,
       };
     } else {
       // Fetch repair request to get customer details

@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const pdfService = new PDFService();
     
     // Calculate quote
-    const quote = await quoteService.calculateQuote(customer, items);
+    const quote = await quoteService.calculateQuote({ ...customer, phone: customer.phone || whatsappUserId }, items);
     
     // Save quote to Supabase
     await DatabaseService.saveQuote(quote);
@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
     // Generate and save Quote PDF
     try {
       const quotePdfBuffer = await pdfService.generateQuotePDF(quote);
-      const quotePdfUrl = await pdfService.savePDF(quotePdfBuffer, quote.quoteNumber);
-      await DatabaseService.updateQuotePdfUrl(quote.quoteNumber, quotePdfUrl);
+      const { pdfUrl, storagePath } = await pdfService.savePDF(quotePdfBuffer, quote.quoteNumber);
+      await DatabaseService.updateQuotePdfUrl(quote.quoteNumber, pdfUrl, storagePath);
     } catch (pdfError) {
       console.error('Failed to generate or save Quote PDF:', pdfError);
       // Proceed even if PDF generation fails

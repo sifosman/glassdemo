@@ -12,6 +12,8 @@ interface Quote {
     address: string;
     phone?: string;
   };
+  pdfUrl?: string;
+  invoicePdfUrl?: string;
   total: number;
   depositAmount: number;
   depositPaid: number;
@@ -70,9 +72,21 @@ export default function QuoteSuccessPage() {
 
   const downloadInvoice = () => {
     try {
-      const origin = window.location.origin;
-      const invoiceUrl = `${origin}/quotes/${quote.quoteNumber}-invoice.pdf`;
-      window.open(invoiceUrl, '_blank');
+      if (quote.invoicePdfUrl) {
+        window.open(quote.invoicePdfUrl, '_blank');
+        return;
+      }
+
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (supabaseUrl) {
+        window.open(
+          `${supabaseUrl}/storage/v1/object/public/documents/invoices/${quote.quoteNumber}-invoice.pdf`,
+          '_blank'
+        );
+        return;
+      }
+
+      alert('Invoice is not available yet. Please try again shortly.');
     } catch (error) {
       console.error('Error opening invoice:', error);
       alert('Error opening invoice. Please try again.');
