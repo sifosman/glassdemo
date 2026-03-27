@@ -68,6 +68,17 @@ export default function QuoteSuccessPage() {
 
   const remainingBalance = quote.total - (quote.depositPaid || quote.depositAmount);
 
+  const downloadInvoice = () => {
+    try {
+      const origin = window.location.origin;
+      const invoiceUrl = `${origin}/quotes/${quote.quoteNumber}-invoice.pdf`;
+      window.open(invoiceUrl, '_blank');
+    } catch (error) {
+      console.error('Error opening invoice:', error);
+      alert('Error opening invoice. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
@@ -111,6 +122,13 @@ export default function QuoteSuccessPage() {
           </div>
 
           <div className="space-y-3">
+            <button 
+              onClick={downloadInvoice}
+              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-center"
+            >
+              Download PDF Invoice
+            </button>
+            
             <Link 
               href={`/quote/${reference}`}
               className="block w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-colors text-center border border-gray-300"

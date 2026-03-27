@@ -339,7 +339,9 @@ export async function POST(request: NextRequest) {
               await botSailorService.sendInvoiceToWhatsApp(
                 whatsappUserId,
                 pdfUrl,
-                fullQuote.quoteNumber
+                fullQuote.quoteNumber,
+                depositPaid,
+                fullQuote.total
               );
               console.log('Invoice WhatsApp message sent successfully');
             } else {

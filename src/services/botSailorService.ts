@@ -52,9 +52,11 @@ export class BotSailorService {
     }
   }
 
-  async sendInvoiceToWhatsApp(whatsappUserId: string, pdfUrl: string, quoteReference: string): Promise<void> {
+  async sendInvoiceToWhatsApp(whatsappUserId: string, pdfUrl: string, quoteReference: string, depositPaid: number, totalAmount: number): Promise<void> {
     try {
-      const message = `✅ *Payment Received - OWD Glass*\n\nThank you for your deposit payment for Quote ${quoteReference}!\n\n📋 Your official invoice/receipt is attached.\n\nOur scheduling team will contact you shortly to arrange the installation.\n\nQuestions? Contact us:\n📧 info@owdglass.co.za\n📞 +27 12 345 6789\n\nOWD Glass - Professional Glazing Solutions`;
+      const remainingBalance = totalAmount - depositPaid;
+      
+      const message = `✅ *Payment Received - OWD Glass*\n\nThank you for your deposit payment for Quote ${quoteReference}!\n\n📋 *Payment Summary:*\n• Total Quote: R${totalAmount.toFixed(2)}\n• Deposit Paid: R${depositPaid.toFixed(2)}\n• Remaining Balance: R${remainingBalance.toFixed(2)}\n\nYour official invoice/receipt is attached.\n\nOur scheduling team will contact you shortly to arrange the installation. The remaining balance of R${remainingBalance.toFixed(2)} is due strictly upon completion of the installation.\n\nQuestions? Contact us:\n📧 info@owdglass.co.za\n📞 +27 12 345 6789\n\nOWD Glass - Professional Glazing Solutions`;
 
       const payload = {
         apiToken: this.apiKey,

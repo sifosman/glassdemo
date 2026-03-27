@@ -206,6 +206,16 @@ export default function RepairCheckoutPage() {
           </div>
         </div>
 
+        {isPaid && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+            <div className="text-4xl mb-2">✅</div>
+            <h2 className="text-lg font-semibold text-green-800 mb-2">Payment Received!</h2>
+            <p className="text-green-700">
+              Thank you for your payment. Our team has been notified and will contact you shortly to schedule the repair.
+            </p>
+          </div>
+        )}
+
         {/* Payment Section */}
         {!isPaid && (
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -241,16 +251,6 @@ export default function RepairCheckoutPage() {
                 Secure payment processed by PayFast
               </div>
             </div>
-          </div>
-        )}
-
-        {isPaid && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-            <div className="text-4xl mb-2">✅</div>
-            <h2 className="text-lg font-semibold text-green-800 mb-2">Payment Received!</h2>
-            <p className="text-green-700">
-              Thank you for your payment. Our team has been notified and will contact you shortly to schedule the repair.
-            </p>
           </div>
         )}
 

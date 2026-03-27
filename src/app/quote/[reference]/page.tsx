@@ -145,308 +145,36 @@ export default function QuotePage() {
     return description;
   };
 
-  const downloadQuote = async () => {
+  const downloadQuote = () => {
     if (!quote) return;
+    
+    // Check if the quote has a PDF URL
+    if ((quote as any).pdfUrl) {
+      window.open((quote as any).pdfUrl, '_blank');
+      return;
+    }
     
     const button = document.querySelector('button[onclick*="downloadQuote"]') as HTMLButtonElement;
     const originalText = button?.textContent || 'Download Quote';
     
     try {
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default || jsPDFModule;
-      
       // Show loading state
       if (button) {
-        button.textContent = 'Generating PDF...';
+        button.textContent = 'Opening PDF...';
         button.disabled = true;
       }
-
-      // Create the PDF
-      const pdf = new jsPDF('p', 'mm', 'a4');
       
-      // PDF dimensions
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 20;
-      const contentWidth = pageWidth - 2 * margin;
-      let yPosition = margin;
-
-      // Helper function to add text with word wrap
-      const addText = (text: string, fontSize: number = 12, fontStyle: string = 'normal', isBold: boolean = false) => {
-        pdf.setFontSize(fontSize);
-        pdf.setFont('helvetica', fontStyle);
-        if (isBold) pdf.setFont('helvetica', 'bold');
-        
-        const lines = pdf.splitTextToSize(text, contentWidth);
-        lines.forEach((line: string) => {
-          if (yPosition > pageHeight - margin) {
-            pdf.addPage();
-            yPosition = margin;
-          }
-          pdf.text(line, margin, yPosition);
-          yPosition += fontSize * 0.35;
-        });
-        return yPosition;
-      };
-
-      // Generate reference codes for items
-      const generateReference = (description: string, index: number): string => {
-        const num = String(index + 1).padStart(2, '0');
-        if (description.toLowerCase().includes('window')) return `W${num}`;
-        if (description.toLowerCase().includes('door')) return `D${num}`;
-        return `P${num}`; // Panel
-      };
-      
-      // PAGE 1: SUMMARY WITH TABLE
-      pdf.setFillColor(248, 249, 250);
-      pdf.rect(0, 0, pageWidth, 40, 'F');
-      
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFontSize(24);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('OWD GLASS', margin, 20);
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Professional Glazing Solutions', margin, 28);
-      pdf.text('123 Glass Street, Pretoria | +27 12 345 6789 | info@owdglass.co.za', margin, 35);
-      
-      // Quote header
-      pdf.setFontSize(18);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Quotation', margin, 55);
-      
-      pdf.setFontSize(12);
-      pdf.text(`Ref: ${quote.quoteNumber}`, pageWidth - margin - 60, 55);
-      
-      // Customer info
-      yPosition = 65;
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`To: ${quote.customer.name}`, margin, yPosition);
-      pdf.text(`Quote Date: ${new Date(quote.createdDate).toLocaleDateString('en-ZA')}`, pageWidth - margin - 60, yPosition);
-      pdf.text(`${quote.customer.address}`, margin, yPosition + 8);
-      pdf.text('Validity: 10 days', pageWidth - margin - 60, yPosition + 8);
-      
-      // Summary Table Header
-      yPosition = 85;
-      pdf.setFillColor(220, 220, 220);
-      pdf.rect(margin, yPosition, contentWidth, 8, 'F');
-      
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Reference', margin + 2, yPosition + 5);
-      pdf.text('Qty', margin + 25, yPosition + 5);
-      pdf.text('System', margin + 35, yPosition + 5);
-      pdf.text('Price', pageWidth - margin - 40, yPosition + 5);
-      pdf.text('Total', pageWidth - margin - 20, yPosition + 5);
-      
-      yPosition += 8;
-      
-      // Table rows
-      pdf.setFont('helvetica', 'normal');
-      quote.items.forEach((item, index) => {
-        const ref = generateReference(item.description, index);
-        
-        pdf.setFillColor(245, 245, 245);
-        pdf.rect(margin, yPosition, contentWidth, 6, 'F');
-        
-        pdf.text(ref, margin + 2, yPosition + 4);
-        pdf.text(item.quantity.toString(), margin + 25, yPosition + 4);
-        const displayName = item.systemName || item.description;
-        pdf.text(displayName.substring(0, 30), margin + 35, yPosition + 4);
-        pdf.text(`R ${item.unitPrice.toFixed(2)}`, pageWidth - margin - 45, yPosition + 4);
-        pdf.text(`R ${item.totalPrice.toFixed(2)}`, pageWidth - margin - 25, yPosition + 4);
-        
-        yPosition += 6;
-      });
-      
-      // Totals section
-      yPosition += 10;
-      pdf.setFillColor(240, 240, 240);
-      pdf.rect(margin, yPosition, contentWidth, 25, 'F');
-      
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Sub Total', pageWidth - margin - 70, yPosition + 6);
-      pdf.text(`R ${quote.subtotal.toFixed(2)}`, pageWidth - margin - 25, yPosition + 6);
-      
-      pdf.text(`Vat Total (${quote.vatRate}%)`, pageWidth - margin - 70, yPosition + 14);
-      pdf.text(`R ${quote.vatAmount.toFixed(2)}`, pageWidth - margin - 25, yPosition + 14);
-      
-      pdf.setFontSize(12);
-      pdf.text('Total', pageWidth - margin - 70, yPosition + 22);
-      pdf.text(`R ${quote.total.toFixed(2)}`, pageWidth - margin - 30, yPosition + 22);
-      
-      // Terms
-      yPosition += 35;
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Terms: 50% deposit required. Balance on completion. Valid for 10 days.', margin, yPosition);
-      
-      // Page footer
-      pdf.setFontSize(8);
-      const totalPages = Math.ceil(quote.items.length) + 1;
-      pdf.text(`Page 1 of ${totalPages}`, pageWidth - margin - 20, pageHeight - 10);
-      
-      // PAGES 2+: DETAILED BREAKDOWN (One item per page)
-      quote.items.forEach((item, index) => {
-        pdf.addPage();
-        
-        const ref = generateReference(item.description, index);
-        const widthVal = parseInt(item.size_mm.split(' x ')[0]);
-        const heightVal = parseInt(item.size_mm.split(' x ')[1]);
-        
-        // Header
-        pdf.setFontSize(12);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Quotation', margin, 20);
-        pdf.text(`Ref: ${quote.quoteNumber}`, pageWidth - margin - 60, 20);
-        
-        // Item reference and info
-        yPosition = 35;
-        pdf.setFillColor(220, 220, 220);
-        pdf.rect(margin, yPosition, contentWidth, 30, 'F');
-        
-        pdf.setFontSize(10);
-        const displayName = item.systemName || item.description;
-        pdf.text(`Reference: ${ref}`, margin + 5, yPosition + 8);
-        pdf.text(`Qty: ${item.quantity}`, margin + 5, yPosition + 16);
-        pdf.text(`System: ${displayName}`, margin + 5, yPosition + 24);
-        pdf.text(`Price: R ${item.unitPrice.toFixed(2)}`, pageWidth - margin - 60, yPosition + 16);
-        pdf.text(`Total: R ${item.totalPrice.toFixed(2)}`, pageWidth - margin - 60, yPosition + 24);
-        
-        yPosition += 40;
-        
-        // Calculate proportional diagram size (max 80mm width or height)
-        const maxDiagramSize = 80;
-        const aspectRatio = widthVal / heightVal;
-        let diagramWidth, diagramHeight;
-        
-        if (aspectRatio > 1) {
-          // Wider than tall
-          diagramWidth = Math.min(maxDiagramSize, widthVal / 20);
-          diagramHeight = diagramWidth / aspectRatio;
-        } else {
-          // Taller than wide
-          diagramHeight = Math.min(maxDiagramSize, heightVal / 20);
-          diagramWidth = diagramHeight * aspectRatio;
-        }
-        
-        // Center the diagram
-        const diagramX = margin + 10;
-        const diagramY = yPosition + 10;
-        
-        // Draw professional window diagram with proportional sizing
-        const drawProfessionalWindow = (x: number, y: number, w: number, h: number) => {
-          // Outer frame
-          pdf.setDrawColor(60, 60, 60);
-          pdf.setLineWidth(2);
-          pdf.rect(x, y, w, h);
-          
-          // Inner frame
-          const frameThickness = 4;
-          pdf.setDrawColor(100, 100, 100);
-          pdf.setLineWidth(1);
-          pdf.rect(x + frameThickness, y + frameThickness, w - frameThickness * 2, h - frameThickness * 2);
-          
-          // Glass fill
-          pdf.setFillColor(230, 240, 250);
-          pdf.rect(x + frameThickness + 1, y + frameThickness + 1, w - frameThickness * 2 - 2, h - frameThickness * 2 - 2, 'F');
-          
-          // Window divisions based on type
-          const desc = item.description.toLowerCase();
-          if (desc.includes('door')) {
-            // Vertical division for doors
-            pdf.setDrawColor(80, 80, 80);
-            pdf.setLineWidth(1.5);
-            pdf.line(x + w/2, y + frameThickness, x + w/2, y + h - frameThickness);
-            
-            // Handle
-            pdf.setFillColor(40, 40, 40);
-            const handleSize = Math.min(w, h) / 8;
-            pdf.rect(x + w/2 - handleSize/2, y + h/2 - 2, handleSize, 4, 'F');
-          } else if (aspectRatio > 2) {
-            // Wide window - horizontal division
-            pdf.setDrawColor(80, 80, 80);
-            pdf.setLineWidth(1.5);
-            const numSections = Math.floor(aspectRatio);
-            for (let i = 1; i < numSections; i++) {
-              pdf.line(x + (w * i / numSections), y + frameThickness, x + (w * i / numSections), y + h - frameThickness);
-            }
-          } else {
-            // Standard window - cross division
-            pdf.setDrawColor(80, 80, 80);
-            pdf.setLineWidth(1.5);
-            pdf.line(x + w/2, y + frameThickness, x + w/2, y + h - frameThickness);
-            if (h > w / 2) {
-              pdf.line(x + frameThickness, y + h/2, x + w - frameThickness, y + h/2);
-            }
-          }
-        };
-        
-        drawProfessionalWindow(diagramX, diagramY, diagramWidth, diagramHeight);
-        
-        // Measurements
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(0, 0, 0);
-        
-        // Width measurement (top)
-        pdf.text(`${widthVal}mm`, diagramX + diagramWidth/2 - 10, diagramY - 3);
-        
-        // Height measurement (left side)
-        pdf.text(`${heightVal}mm`, diagramX - 20, diagramY + diagramHeight/2);
-        
-        // Specifications section
-        const specY = diagramY + diagramHeight + 20;
-        
-        pdf.setFontSize(11);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('SPECIFICATIONS', margin, specY);
-        
-        yPosition = specY + 8;
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
-        
-        const specDisplayName = item.systemName || item.description;
-        const glassType = item.glassSpec?.type || 'Clear Float';
-        const glassThickness = item.glassSpec?.thickness || '4mm';
-        const frameFinish = item.frameColor || 'Charcoal Matt';
-        const powderCode = item.powderCoatCode || 'PIS71149';
-        
-        pdf.text(`Design: ${specDisplayName}`, margin, yPosition);
-        yPosition += 7;
-        pdf.text(`Frame Finish: ${frameFinish} ${powderCode}`, margin, yPosition);
-        yPosition += 7;
-        pdf.text(`Glass Type: ${glassType}`, margin, yPosition);
-        yPosition += 7;
-        pdf.text(`Thickness: ${glassThickness}`, margin, yPosition);
-        yPosition += 7;
-        
-        if (item.is_safety_glass) {
-          pdf.text(`Compliance: SANS 1263-1 & SANS 10400-N`, margin, yPosition);
-          yPosition += 7;
-        }
-        
-        pdf.text('Limitations: None', margin, yPosition);
-        yPosition += 7;
-        pdf.text('Comments: Image as viewed from outside', margin, yPosition);
-        
-        // Page footer
-        pdf.setFontSize(8);
-        pdf.text(`Page ${index + 2} of ${quote.items.length + 1}`, pageWidth - margin - 30, pageHeight - 10);
-      });
-      
-      
-      // Save the PDF
-      pdf.save(`OWD-Glass-Quote-${quote.quoteNumber}.pdf`);
+      // Since generateQuotePDF is happening server-side and saving it to public/quotes, 
+      // we can try to directly access it by convention if the pdfUrl is missing.
+      const origin = window.location.origin;
+      const fallbackPdfUrl = `${origin}/quotes/${quote.quoteNumber}.pdf`;
+      window.open(fallbackPdfUrl, '_blank');
       
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Error generating PDF. Please try again.');
+      console.error('Error opening PDF:', error);
+      alert('Error opening PDF. Please try again.');
     } finally {
       // Reset button
-      const button = document.querySelector('button[onclick*="downloadQuote"]') as HTMLButtonElement;
       if (button) {
         button.textContent = originalText;
         button.disabled = false;
