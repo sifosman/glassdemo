@@ -59,7 +59,29 @@ function verifySignature(data: Record<string, string>, passphrase: string): bool
   return calculatedSignature === signature;
 }
 
-async function sendTeamNotification(repairData: any, paymentData: any) {
+type PayFastPaymentData = {
+  amount_gross?: string | number;
+  pf_payment_id?: string;
+};
+
+type RepairRequestEmailData = {
+  reference_number: string;
+  customer_phone: string;
+  customer_location?: string | null;
+  system_type?: string | null;
+  glass_type?: string | null;
+  frame_finish?: string | null;
+  expert_advice?: string | null;
+  safety_upgrade_required?: boolean | null;
+  safety_note?: string | null;
+  distance_km?: number | null;
+  calculated_call_out_fee?: number | null;
+  materials_fitting?: number | null;
+  total_price?: number | null;
+  [key: string]: unknown;
+};
+
+async function sendTeamNotification(repairData: RepairRequestEmailData, paymentData: PayFastPaymentData) {
   try {
     const transporter = nodemailer.createTransporter({
       host: SMTP_HOST,

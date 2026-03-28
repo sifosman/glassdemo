@@ -30,10 +30,11 @@ export async function POST(request: NextRequest) {
       message: 'Quote calculated successfully (PDF generation bypassed)'
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error calculating quote:', error);
+    const details = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message || 'Unknown error' },
+      { error: 'Internal server error', details },
       { status: 500 }
     );
   }

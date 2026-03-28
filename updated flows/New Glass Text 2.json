@@ -1,0 +1,201 @@
+{
+  "name": "New Glass Text 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "5eabbc15-15d7-48dc-b6b8-03129854cee8",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ce9bf4f7-28b0-40ff-8e3d-93a206845c0e",
+      "name": "Webhook",
+      "webhookId": "5eabbc15-15d7-48dc-b6b8-03129854cee8"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://glassdemo.vercel.app/api/generate-quote",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.myPayload) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        832,
+        0
+      ],
+      "id": "dca2ee79-66c8-444e-afb1-4b402062bf8b",
+      "name": "Send to Application API"
+    },
+    {
+      "parameters": {
+        "url": "https://klazqmnlgzclidjcuabr.supabase.co/rest/v1/pending_quotes",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "=eq.{{ $json.body.chat_id }}"
+            },
+            {
+              "name": "order",
+              "value": "created_at.desc"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsYXpxbW5sZ3pjbGlkamN1YWJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMjAzNTYsImV4cCI6MjA4NDU5NjM1Nn0.uX6icgzzdAVie--AyWny-7XyQtaaVox_Rv3Jinuiesk"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3536add9-7eee-450f-a0a3-6e48ddd27aa6",
+      "name": "Get Supabase Data",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "nugNXWuQUxcMnsvG",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Grab the data from the Webhook and Supabase nodes\nconst webhookData = $('Webhook').first().json.body;\n// Supabase GET node returns an array, we need the first item\nconst supabaseData = $input.first().json;\n\n// Parse the quote data safely\nlet parsedItems = [];\nif (typeof supabaseData.quote_data === 'string') {\n  parsedItems = JSON.parse(supabaseData.quote_data);\n} else {\n  parsedItems = supabaseData.quote_data;\n}\n\n// FIX: Ensure every item has a frameColor so the Next.js API doesn't crash\nparsedItems = parsedItems.map(item => ({\n  ...item,\n  frameColor: item.frameColor || \"Silver\" // Default to Silver if the AI missed it\n}));\n\n// Build the perfect payload for your Next.js API\nconst payload = {\n  customer: {\n    name: webhookData.subscriber_name || 'Customer',\n    email: \"Test@example.com\",\n    phone: webhookData.chat_id,\n    address: webhookData.custom_fields?.customer_address || \"Test Address\"\n  },\n  items: parsedItems,\n  whatsappUserId: webhookData.chat_id\n};\n\n// Return it so the next node can just grab it cleanly\nreturn [{ json: { myPayload: payload } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c1af16c1-e267-4779-9184-f6cb794ac3f4",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "sifosman.app.n8n.cloud",
+            "content-length": "298",
+            "accept": "application/json",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2400:6180:0:d2:0:2:5a8e:4000",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9e2e60d66e981473-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "2400:6180:0:d2:0:2:5a8e:4000, 162.158.163.184",
+            "x-forwarded-host": "sifosman.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-40-88d9967ff-9d4wd",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2400:6180:0:d2:0:2:5a8e:4000"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "subscriber_id": "27658475289-324783",
+            "first_name": "OWD",
+            "chat_id": "27658475289",
+            "user_input_data": [
+              {
+                "question": "Great! To generate your official quotation, please provide the full installation/delivery address.",
+                "answer": "122 jamestown avenue, crosby"
+              }
+            ],
+            "whatsapp_bot_username": "+27 66 307 7449"
+          },
+          "webhookUrl": "https://sifosman.app.n8n.cloud/webhook/5eabbc15-15d7-48dc-b6b8-03129854cee8",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Supabase Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Supabase Data": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send to Application API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "18b29d86-a2e6-4d6e-af22-089f1a8d0331",
+  "meta": {
+    "instanceId": "33f53a3b4d83000e68c4b5697f5022c173f43db99cc93da8da17684fff98fab1"
+  },
+  "id": "WspsLKr8tvRC89V0",
+  "tags": []
+}

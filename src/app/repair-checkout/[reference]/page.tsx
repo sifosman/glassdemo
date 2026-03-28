@@ -225,7 +225,7 @@ export default function RepairCheckoutPage() {
             
             <p className="text-gray-900 mb-6">
               Pay the call-out fee of <strong>R{repairData.calculated_call_out_fee.toFixed(2)}</strong> to schedule your repair. 
-              This covers our technician's travel to your location for the official assessment.
+              This covers our technician&apos;s travel to your location for the official assessment.
             </p>
 
             <div className="space-y-3">

@@ -17,6 +17,21 @@ type QuoteWithPaymentDetails = Quote & {
   invoicePdfUrl?: string;
 };
 
+type CreateInvoiceInput = {
+  quote_number: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email?: string;
+  billing_address?: string;
+  subtotal: number;
+  vat_amount: number;
+  total: number;
+  amount_paid: number;
+  balance_due: number;
+  pdf_url: string;
+  pdf_storage_path?: string;
+};
+
 export class DatabaseService {
   // Save a complete quote with customer and items
   static async saveQuote(quote: Quote): Promise<string> {
@@ -297,7 +312,7 @@ export class DatabaseService {
   }
 
   // Create an invoice
-  static async createInvoice(invoiceData: any): Promise<void> {
+  static async createInvoice(invoiceData: CreateInvoiceInput): Promise<void> {
     try {
       // First find the quote to get the IDs
       const { data: quote, error: quoteError } = await supabase

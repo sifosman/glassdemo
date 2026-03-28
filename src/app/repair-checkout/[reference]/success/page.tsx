@@ -90,9 +90,9 @@ export default function RepairCheckoutSuccessPage() {
             <h3 className="font-semibold text-blue-800 mb-2">What happens next?</h3>
             <ol className="text-sm text-blue-700 space-y-2 list-decimal list-inside">
               <li>Our team has been notified of your booking</li>
-              <li>We'll contact you within 2 hours to schedule the site visit</li>
+              <li>We&apos;ll contact you within 2 hours to schedule the site visit</li>
               <li>Our technician will arrive to assess and provide an official quote</li>
-              <li>We'll complete the repair with SANS-approved safety glass</li>
+              <li>We&apos;ll complete the repair with SANS-approved safety glass</li>
             </ol>
           </div>
 

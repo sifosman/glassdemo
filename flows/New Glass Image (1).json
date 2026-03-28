@@ -1,0 +1,239 @@
+{
+  "name": "New Glass Image",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "applicationApiUrl",
+              "value": "https://glassdemo.vercel.app/api/generate-quote",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "imageUrlField",
+              "value": "={{ $json.body.user_input_data[0].answer }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "a8a6672d-6303-4f48-bea7-70e5ceccf376",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -832,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.user_input_data[0].answer }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "image"
+            }
+          }
+        }
+      },
+      "id": "a5f284f2-c4d0-4ea3-9df0-ec048b45ddc9",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -400,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "measurements",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "imageUrl",
+              "value": "={{ $('Workflow Configuration').first().json.imageUrlField }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "processedAt",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "status",
+              "value": "processed",
+              "type": "string"
+            },
+            {
+              "id": "a02355f2-1742-460b-901a-99fa073fde2e",
+              "name": "=items",
+              "value": "={{ JSON.parse($json.content.parts[0].text.replace(/```json\\n/g, '').replace(/```/g, '')).items }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5ef65449-eab6-42b0-9e0e-ae8a88eb2242",
+      "name": "Format Measurement Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        464,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow Configuration').first().json.applicationApiUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customer\": {\n    \"name\": \"{{ $('Webhook').item.json.body.first_name }}\",\n    \"email\": \"Test@example.com\",\n    \"phone\": \"{{ $('Webhook').item.json.body.chat_id }}\",\n    \"address\": \"Test Address\"\n  },\n  \"items\":{{ $json.items }} ,\n  \"whatsappUserId\": \"{{ $('Webhook').item.json.body.chat_id }}\"\n}",
+        "options": {}
+      },
+      "id": "9fc8b8df-c8d2-4f1c-8676-2e0e4fb5d17c",
+      "name": "Send to Application API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        688,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-pro",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-pro"
+        },
+        "text": "You are a glass quotation assistant for OWD Glass. This is an architectural drawing showing a complete glass installation. Analyze this image THOROUGHLY and extract EVERY glass item visible.\n\nCRITICAL: This is a COMPLEX installation with multiple units. Look for:\n- All windows (different sizes, sliding, fixed, casement)\n- All doors (sliding doors, balcony doors, entry doors)\n- All glass panels (fixed, corner units, side panels)\n- Any glass partitions or walls\n\nFor EACH glass item you can identify, extract:\n- width_mm: Width in millimeters (convert from inches if needed: 1 inch = 25.4mm)\n- height_mm: Height in millimeters (convert from inches if needed: 1 inch = 25.4mm)\n- type: \"window\", \"door\", \"sliding_door\", \"fixed_panel\", or \"partition\"\n- glassType: Use industry-standard terms:\n  * \"clear\" for standard clear glass\n  * \"low-e\" for energy efficient/low emissivity glass\n  * \"tinted\" for colored/tinted glass\n  * \"frosted\" for obscure/frosted glass\n  * \"mirror\" for mirror glass\n  * \"patterned\" for decorative/patterned glass\n  * \"tempered\" for tempered safety glass\n  * \"laminated\" for laminated safety glass\n- frameColor: \"White\", \"Charcoal\", \"Brown\", \"Black\", \"Aluminum\", \"Silver\", or other visible frame color\n- thickness: glass thickness in mm (standard: 6mm for windows, 10-12mm for doors/sliding)\n\nIMPORTANT:\n- Count ALL glass units visible in the drawing\n- Look for dimension labels and measurements on the drawing\n- If measurements are shown in feet/inches, convert to mm (1 inch = 25.4mm)\n- Estimate sizes for unlabeled units based on scale and context\n- Include sliding glass doors, balcony doors, and large fixed panels\n- This appears to be a large installation - expect 8-15+ glass items\n- \"Low-E\" is commonly used for energy efficient glass in modern installations\n- Sliding doors and large panels typically use 10-12mm thickness\n\nReturn ONLY valid JSON with ALL items:\n{\n  \"items\": [\n    {\n      \"width_mm\": 1200,\n      \"height_mm\": 800,\n      \"type\": \"window\",\n      \"glassType\": \"clear\",\n      \"frameColor\": \"White\",\n      \"thickness\": 6\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        160
+      ],
+      "id": "b7fea306-bcc2-4127-8233-91a331504fdc",
+      "name": "Analyze an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fTA5h4sSgCbnGFHg",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "521d5a1d-f594-4cf0-947a-9bfdfac8e8b2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1088,
+        176
+      ],
+      "id": "576df736-1297-43ae-8810-bafd32b73d3a",
+      "name": "Webhook",
+      "webhookId": "521d5a1d-f594-4cf0-947a-9bfdfac8e8b2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Measurement Data": {
+      "main": [
+        [
+          {
+            "node": "Send to Application API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Application API": {
+      "main": [
+        []
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Format Measurement Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1a5da11c-e6eb-47e9-b810-3c6351a7e220",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33f53a3b4d83000e68c4b5697f5022c173f43db99cc93da8da17684fff98fab1"
+  },
+  "id": "m5zEXoiS7lxZyepx",
+  "tags": []
+}

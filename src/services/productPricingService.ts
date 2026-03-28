@@ -2,9 +2,24 @@ import { supabase, Database } from '@/lib/supabase';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
+type CompanyConfig = {
+  quote_settings?: {
+    vat_rate?: number;
+    validity_days?: number;
+    deposit_percentage?: number;
+    min_order_value?: number;
+  };
+  safety_glass_locations?: {
+    locations?: string[];
+    door_proximity_mm?: number;
+    low_level_height_mm?: number;
+  };
+  [key: string]: unknown;
+};
+
 export class ProductPricingService {
   private products: Product[] = [];
-  private companyConfig: any = null;
+  private companyConfig: CompanyConfig | null = null;
   private productsLoaded: boolean = false;
   private configLoaded: boolean = false;
 
@@ -49,10 +64,11 @@ export class ProductPricingService {
 
       if (error) throw error;
       
-      this.companyConfig = {};
-      (data || []).forEach(config => {
-        this.companyConfig[config.key] = config.value;
+      const config: CompanyConfig = {};
+      (data || []).forEach((row) => {
+        config[row.key] = row.value as unknown;
       });
+      this.companyConfig = config;
       this.configLoaded = true;
     } catch (error) {
       console.error('Error loading company config:', error);
@@ -62,7 +78,7 @@ export class ProductPricingService {
   // Find the best product match based on glass type and requirements
   private findBestProduct(glassType: string, isSafetyGlass: boolean, thickness?: number): Product | null {
     // First try to find in database products
-    let matchingProducts = this.products.filter(product => {
+    const matchingProducts = this.products.filter(product => {
       const glassTypeMatch = product.glass_type?.toLowerCase() === glassType.toLowerCase();
       const safetyMatch = isSafetyGlass ? product.is_safety_glass : true;
       return glassTypeMatch && safetyMatch && product.in_stock;
