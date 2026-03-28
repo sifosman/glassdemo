@@ -120,8 +120,10 @@ const parseSizeMm = (size: string): { widthMm: number; heightMm: number } | null
 const inferKind = (item: Pick<CalculatedItem, 'description' | 'systemName'>): DiagramModel['kind'] | null => {
   const hay = `${item.systemName || ''} ${item.description || ''}`.toLowerCase();
   if (hay.includes('certificate')) return null;
+  if (hay.includes('clip 44') || hay.includes('shop front') || hay.includes('shopfront')) return 'sliding_door';
   if (hay.includes('door')) return 'sliding_door';
-  if (hay.includes('window')) return 'window';
+  if (hay.includes('swift 28') || hay.includes('window')) return 'window';
+  if (hay.includes('swift 38') || hay.includes('panel')) return 'window';
   return null;
 };
 
@@ -129,6 +131,9 @@ const normalizeOpeningToken = (raw: string) => raw.toLowerCase().replace(/\s+/g,
 
 const inferPanels = (kind: DiagramModel['kind'], widthMm: number, description: string): DiagramPanel[] => {
   const hay = normalizeOpeningToken(description || '');
+  if (kind === 'window' && hay.includes('panel')) {
+    return [{ kind: 'fixed', label: 'FIXED' }];
+  }
   const explicitPanels = hay.match(/(\d)\s*(panel|pnl)/);
   const xoToken = hay.match(/\b([ox]{2,4})\b/);
 
@@ -391,7 +396,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({ quote }) => {
 
   const rows = buildItemRefs(quote.items);
   const scheduleRows = rows.filter((r) => r.diagram);
-  const schedulePages = splitIntoPages(scheduleRows, 3);
+  const schedulePages = splitIntoPages(scheduleRows, 1);
 
   return (
     <Document>
@@ -438,14 +443,13 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({ quote }) => {
                 <Text style={styles.kvKey}>Safety Glass</Text>
                 <Text style={styles.kvValue}>{quote.requiresSafetyGlass ? 'Required' : 'Not required'}</Text>
               </View>
-              {quote.requiresSafetyGlass && quote.safetyReason ? (
-                <View style={styles.kvRow}>
-                  <Text style={styles.kvKey}>Reason</Text>
-                  <Text style={styles.kvValue}>{quote.safetyReason}</Text>
-                </View>
-              ) : null}
             </View>
           </View>
+          {quote.requiresSafetyGlass ? (
+            <View style={{ marginTop: 8 }}>
+              <Text style={styles.note}>Safety glazing will be applied per SANS 10400-N where required. Item-by-item notes are shown in the Technical Schedule.</Text>
+            </View>
+          ) : null}
         </View>
 
         <Text style={styles.sectionTitle}>Quotation Items</Text>

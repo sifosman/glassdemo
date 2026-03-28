@@ -8,6 +8,7 @@ export async function GET(
 ) {
   try {
     const { reference } = await params;
+    const regenerateQuotePdf = request.nextUrl.searchParams.get('regenerateQuotePdf') === '1';
     
     if (!reference) {
       return NextResponse.json(
@@ -28,7 +29,7 @@ export async function GET(
 
     const pdfService = new PDFService();
 
-    if (!quote.pdfUrl) {
+    if (regenerateQuotePdf || !quote.pdfUrl) {
       try {
         const buffer = await pdfService.generateQuotePDF(quote);
         const { pdfUrl, storagePath } = await pdfService.savePDF(buffer, quote.quoteNumber);
