@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sales Partner Agreement & NDA - OWD Solutions</title>
+  <style>
+    :root {
+      --primary: #0b1f3b;
+      --accent: #0a84ff;
+      --text: #202124;
+      --muted: #5f6368;
+      --border: #e0e0e0;
+      --bg: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .container { max-width: 900px; margin: 24px auto; padding: 24px; background: #fff; border: 1px solid var(--border); border-radius: 10px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-img { height: 88px; width: auto; border-radius: 8px; display: block; }
+    h1 { margin: 0; font-size: 28px; color: var(--primary); }
+    h2 { font-size: 18px; color: var(--primary); margin-top: 24px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    p, li { line-height: 1.6; font-size: 14px; }
+    .meta { text-align: right; font-size: 14px; color: var(--muted); }
+    
+    @media print {
+      body { background: #fff; }
+      .container { border: none; border-radius: 0; box-shadow: none; margin: 0; width: 100%; padding: 0; }
+      .no-print { display: none !important; }
+      @page { size: A4; margin: 16mm; }
+    }
+    .btns { display: flex; gap: 8px; justify-content: flex-end; margin: 0 0 10px; }
+    .btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-weight: 600; font-family: inherit;}
+    .btn.secondary { background: #e9eef6; color: var(--primary); }
+    .muted { color: var(--muted); }
+    
+    .signature-block { display: flex; gap: 40px; margin-top: 60px; page-break-inside: avoid; }
+    .signature-area { flex: 1; }
+    .signature-line { border-top: 1px solid var(--text); padding-top: 8px; margin-top: 60px; font-weight: bold; }
+  </style>
+  <script>
+    function downloadHTML() {
+      const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sales_partner_agreement_nda.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="no-print btns">
+      <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+      <button class="btn secondary" onclick="downloadHTML()">Download HTML</button>
+    </div>
+
+    <header>
+      <div class="logo">
+        <img src="logo.png" alt="Company logo" class="logo-img" onerror="this.style.display='none'" />
+        <div>
+          <h1>PARTNER AGREEMENT & NDA</h1>
+          <div class="muted">Independent Sales Representative</div>
+        </div>
+      </div>
+      <div class="meta">
+        <div><strong>Date</strong>: _______________</div>
+      </div>
+    </header>
+
+    <p>This Independent Sales Partner Agreement and Non-Disclosure Agreement (the "Agreement") is entered into by and between:</p>
+    <p>
+      <strong>Company:</strong> OWD Solutions<br/>
+      <strong>Partner:</strong> ___________________________________ (Name/Company)
+    </p>
+
+    <h2>1. Engagement & Services</h2>
+    <p>The Company engages the Partner as an independent sales representative to market and sell the "OWD Glass-Engine" software system to prospective clients in the glass and aluminum industry. The Partner is acting as an independent contractor, not an employee.</p>
+
+    <h2>2. Compensation & Commission Structure</h2>
+    <p>Compensation and commission details will be outlined in a separate agreement specific to the partner arrangement.</p>
+
+    <h2>3. Demonstration & Support</h2>
+    <p>The Partner agrees to use the approved "Sales Bible" and officially sanctioned demonstration methods. The Company will handle all technical execution, API integrations, workflow setups, infrastructure hosting, and long-term client technical support.</p>
+
+    <h2>4. Non-Disclosure Agreement (NDA) & Confidentiality</h2>
+    <p>During the course of this engagement, the Partner will have access to confidential and proprietary information belonging to the Company. The Partner agrees to the following:</p>
+    <ul>
+      <li><strong>Confidential Information:</strong> Includes, but is not limited to, pricing models, backend architecture (n8n, BotSailor setups), prompt engineering strategies, client lists, business strategies, and all proprietary code or processes.</li>
+      <li><strong>Non-Disclosure:</strong> Partner shall hold all Confidential Information in strict confidence and shall not disclose it to any third party without prior written consent from the Company.</li>
+      <li><strong>Use of Information:</strong> The Confidential Information shall be used solely for the purpose of selling the OWD Glass-Engine on behalf of the Company.</li>
+      <li><strong>Non-Compete Context:</strong> The Partner agrees not to use the technical insights, workflow structures, or business models learned from the Company to independently develop a competing automated WhatsApp quoting system for the glass industry during the term of this agreement and for a period of 24 months following its termination.</li>
+    </ul>
+
+    <h2>5. Term & Termination</h2>
+    <p>This Agreement is effective immediately upon signing. Either party may terminate this Agreement at any time with 14 days written notice. Upon termination, any ongoing compensation arrangements will be handled according to the terms outlined in the separate compensation agreement.</p>
+
+    <div class="signature-block">
+      <div class="signature-area">
+        <p><strong>For the Company (OWD Solutions):</strong></p>
+        <div class="signature-line">Signature</div>
+        <p style="margin-top: 8px;">Name: Mohamed Osman</p>
+        <p>Date: ________________________</p>
+      </div>
+      <div class="signature-area">
+        <p><strong>For the Sales Partner:</strong></p>
+        <div class="signature-line">Signature</div>
+        <p style="margin-top: 8px;">Name: ________________________</p>
+        <p>Date: ________________________</p>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     const quoteService = new GlassQuoteService();
     const botSailorService = new BotSailorService();
     const pdfService = new PDFService();
+    let quotePdfUrl: string | null = null;
     
     // Calculate quote
     const quote = await quoteService.calculateQuote({ ...customer, phone: customer.phone || whatsappUserId }, items);
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
     try {
       const quotePdfBuffer = await pdfService.generateQuotePDF(quote);
       const { pdfUrl, storagePath } = await pdfService.savePDF(quotePdfBuffer, quote.quoteNumber);
+      quotePdfUrl = pdfUrl;
       await DatabaseService.updateQuotePdfUrl(quote.quoteNumber, pdfUrl, storagePath);
     } catch (pdfError) {
       console.error('Failed to generate or save Quote PDF:', pdfError);
@@ -50,13 +52,18 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app';
     const quoteUrl = `${baseUrl}/quote/${quote.quoteNumber}?reference=${quote.quoteNumber}`;
     
-    // Send quote URL via WhatsApp
-    await botSailorService.sendQuoteLinkToWhatsApp(whatsappUserId, quoteUrl, quote.quoteNumber);
+    // Send quote PDF link + attachment via WhatsApp (preferred), fallback to web link if PDF not available
+    if (quotePdfUrl) {
+      await botSailorService.sendQuotePdfToWhatsApp(whatsappUserId, quotePdfUrl, quoteUrl, quote.quoteNumber);
+    } else {
+      await botSailorService.sendQuoteLinkToWhatsApp(whatsappUserId, quoteUrl, quote.quoteNumber);
+    }
     
     return NextResponse.json({
       success: true,
       quoteReference: quote.quoteNumber,
       quoteUrl,
+      quotePdfUrl,
       totalAmount: quote.total,
       message: 'Quote generated and sent successfully via WhatsApp'
     });

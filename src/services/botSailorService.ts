@@ -52,6 +52,57 @@ export class BotSailorService {
     }
   }
 
+  async sendQuotePdfToWhatsApp(whatsappUserId: string, pdfUrl: string, quoteUrl: string, quoteReference: string): Promise<void> {
+    const message =
+      `🔷 *OWD Glass Quote ${quoteReference}*\n\n` +
+      `Your glass quotation is ready.\n\n` +
+      `📄 Download / open PDF:\n${pdfUrl}\n\n` +
+      `🌐 View quote online:\n${quoteUrl}\n\n` +
+      `Quote valid for 10 days.\n\n` +
+      `Questions? Contact us:\n📧 info@owdglass.co.za\n📞 +27 12 345 6789\n\n` +
+      `SANS 10400-N Compliant ✅`;
+
+    try {
+      const payload = {
+        apiToken: this.apiKey,
+        phone_number_id: this.phoneNumberId,
+        message,
+        phone_number: whatsappUserId,
+        type: "file",
+        file: {
+          url: pdfUrl,
+          filename: `${quoteReference}.pdf`,
+        },
+      };
+
+      const endpoint = `${this.baseUrl}/api/v1/whatsapp/send`.replace(/\/+/g, '/');
+      const response = await axios.post(endpoint, payload);
+
+      if (response.data.status !== "1") {
+        throw new Error(`BotSailor API returned status: ${response.data.message}`);
+      }
+
+      console.log(`Quote PDF for ${quoteReference} sent successfully to ${whatsappUserId}`);
+    } catch (error) {
+      console.error('Error sending quote PDF via BotSailor:', error);
+
+      try {
+        await this.sendTextMessage(whatsappUserId, message);
+        console.log(`Quote PDF fallback text sent successfully to ${whatsappUserId}`);
+        return;
+      } catch (fallbackError) {
+        console.error('Failed to send quote PDF fallback text via BotSailor:', fallbackError);
+      }
+
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        throw new Error(`Failed to send WhatsApp message: ${errorMessage}`);
+      }
+
+      throw new Error('Failed to send WhatsApp message via BotSailor');
+    }
+  }
+
   async sendInvoiceToWhatsApp(whatsappUserId: string, pdfUrl: string, quoteReference: string, depositPaid: number, totalAmount: number): Promise<void> {
     const remainingBalance = totalAmount - depositPaid;
     

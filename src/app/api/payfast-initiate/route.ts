@@ -137,6 +137,54 @@ export async function POST(request: NextRequest) {
         custom_str3: 'quote',
         custom_str4: quote.customer_phone,
       };
+    } else if (payment_type === 'balance') {
+      // Handle balance payment
+      const { data: quote, error: fetchError } = await supabase
+        .from('quotes')
+        .select('*')
+        .eq('quote_number', reference_number)
+        .single();
+
+      if (fetchError || !quote) {
+        return NextResponse.json(
+          { error: 'Quote not found' },
+          { status: 404 }
+        );
+      }
+
+      // Check if deposit has been paid first
+      if (Number(quote.deposit_paid || 0) < Number(quote.deposit_amount || 0)) {
+        return NextResponse.json(
+          { error: 'Deposit must be paid before balance payment' },
+          { status: 400 }
+        );
+      }
+
+      // Check if balance has already been paid
+      if (Number(quote.balance_paid || 0) >= (quote.total - (quote.deposit_paid || 0))) {
+        return NextResponse.json(
+          { error: 'This quote balance has already been paid' },
+          { status: 400 }
+        );
+      }
+
+      payfastData = {
+        merchant_id: PAYFAST_MERCHANT_ID,
+        merchant_key: PAYFAST_MERCHANT_KEY,
+        return_url: return_url || `${process.env.NEXT_PUBLIC_BASE_URL}/quote/${reference_number}/balance-success`,
+        cancel_url: cancel_url || `${process.env.NEXT_PUBLIC_BASE_URL}/quote/${reference_number}/pay-balance`,
+        notify_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payfast-notify`,
+        name_first: quote.customer_name || 'Customer',
+        email_address: quote.customer_email || 'customer@example.com',
+        m_payment_id: orderId,
+        amount: Number(amount).toFixed(2),
+        item_name: item_name || `Balance Payment - ${reference_number}`,
+        item_description: `Final balance payment for glass quote - ${reference_number}`,
+        custom_str1: reference_number,
+        custom_str2: quote.id,
+        custom_str3: 'balance',
+        custom_str4: quote.customer_phone,
+      };
     } else {
       // Fetch repair request to get customer details
       const { data: repairRequest, error: fetchError } = await supabase

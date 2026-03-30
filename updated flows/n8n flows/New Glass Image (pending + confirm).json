@@ -1,0 +1,356 @@
+{
+  "name": "New Glass Image (pending + confirm)",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "applicationApiUrl",
+              "value": "https://glassdemo.vercel.app/api/generate-quote",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "imageUrlField",
+              "value": "={{ $json.body.user_input_data[0].answer }}",
+              "type": "string"
+            },
+            {
+              "id": "b93e96f5-7176-4df6-bc0a-b61eeb3b7309",
+              "name": "supabaseUpsertUrl",
+              "value": "https://klazqmnlgzclidjcuabr.supabase.co/rest/v1/pending_quotes?on_conflict=chat_id",
+              "type": "string"
+            },
+            {
+              "id": "03a38859-62ea-4d95-8def-bbfc7c9ba95a",
+              "name": "supabaseGetUrl",
+              "value": "https://klazqmnlgzclidjcuabr.supabase.co/rest/v1/pending_quotes",
+              "type": "string"
+            },
+            {
+              "id": "0b8f1dc0-3854-474e-b859-fb4f0d692d69",
+              "name": "supabaseKey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsYXpxbW5sZ3pjbGlkamN1YWJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMjAzNTYsImV4cCI6MjA4NDU5NjM1Nn0.uX6icgzzdAVie--AyWny-7XyQtaaVox_Rv3Jinuiesk",
+              "type": "string"
+            },
+            {
+              "id": "ea6b134c-8820-4d06-923d-d53d83dc0f28",
+              "name": "botSailorSendUrl",
+              "value": "https://botsailor.com/api/v1/whatsapp/send",
+              "type": "string"
+            },
+            {
+              "id": "ea10cfbd-49e4-4899-8ed6-9bdfc3d3f8ab",
+              "name": "botSailorApiToken",
+              "value": "17624|mrHKuEUJ3ugTwXrKNcPu3hmhj9wcxoY2YHTSbrE3048e937d",
+              "type": "string"
+            },
+            {
+              "id": "d944993f-133f-4abc-94a9-fd95369688b0",
+              "name": "botSailorPhoneNumberId",
+              "value": "967736983089856",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "1209d0ff-a70d-4b17-85c6-af716bd72aeb",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -832,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.user_input_data[0].answer }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "image"
+            }
+          }
+        }
+      },
+      "id": "0a3f5228-d68c-4c98-bb95-2bce198410aa",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -400,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-pro",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-pro"
+        },
+        "text": "### ROLE\nYou are a Senior Architectural Glass Estimator. Your task is to transcribe handwritten sketches into a precise JSON format for a glass quotation system. Accuracy is critical; lives and budgets depend on these measurements.\n\n### TASK\nAnalyze the provided image. Extract every glass unit, paying close attention to handwritten quantities (multipliers like x2, x3) and specific technical symbols.\n\n### EXTRACTION RULES (STRICT COMPLIANCE)\n1. DIMENSIONS: Use the numbers written closest to the width and height lines. If a dimension is missing for a specific item (like a standard door height), leave it as null—DO NOT hallucinate or estimate.\n2. MULTIPLIERS: Look directly below or beside drawings for \"x [number]\" (e.g., \"x2\", \"x3\"). You must generate a separate JSON object for EACH individual unit. (If a drawing says 1785x1200 x2, create two identical entries).\n3. SYMBOL LEGEND: \n   - (T) = \"tempered\" or \"toughened\" glass.\n   - \"Satin\" / \"Obscure\" = \"frosted\" or \"patterned\" glass.\n   - Dual colors (e.g., \"Grey Out / White In\") = Record exactly as \"Grey/White\".\n4. PRIORITY: Handwritten text on the page always overrides \"industry standards.\" \n\n### DATA MAPPING\n- type: Choose only from [\"window\", \"door\", \"sliding_door\", \"fixed_panel\", \"partition\"].\n- glassType: Choose from [\"clear\", \"low-e\", \"tinted\", \"frosted\", \"mirror\", \"patterned\", \"tempered\", \"laminated\"].\n- frameColor: Extract exactly what is written (e.g., \"Grey/White\", \"Charcoal\", \"White\").\n- thickness: Only include if explicitly written. Otherwise, use 6 for windows and 10 for doors as a fallback ONLY if the next node requires a number.\n\n### OUTPUT FORMAT\nReturn ONLY valid JSON. No conversational filler.\n\n{\n  \"items\": [\n    {\n      \"width_mm\": integer or null,\n      \"height_mm\": integer or null,\n      \"type\": \"string\",\n      \"glassType\": \"string\",\n      \"frameColor\": \"string\",\n      \"thickness\": integer\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        160
+      ],
+      "id": "4b2db058-91f3-4809-9d21-5c26d9357e2d",
+      "name": "Analyze an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fTA5h4sSgCbnGFHg",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "9365303a-3a3a-4676-a61b-3221d1fcc5f7",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1088,
+        176
+      ],
+      "id": "3e82877b-57b3-4f02-bc79-eb05d20657a9",
+      "name": "Webhook",
+      "webhookId": "9365303a-3a3a-4676-a61b-3221d1fcc5f7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow Configuration').first().json.botSailorSendUrl }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "apiToken",
+              "value": "={{ $('Workflow Configuration').first().json.botSailorApiToken }}"
+            },
+            {
+              "name": "phone_number_id",
+              "value": "=967736983089856"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{ $('Format Measurement Data').item.json.chat_id }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ 'Please confirm your glass details:\\n\\n' + (typeof $('Format Measurement Data').item.json.items === 'string' ? JSON.parse($('Format Measurement Data').item.json.items) : $('Format Measurement Data').item.json.items).map(item => '🪟 ' + item.type.toUpperCase() + '\\n📐 Size: ' + item.width_mm + 'mm x ' + item.height_mm + 'mm\\n💎 Glass: ' + item.glassType + ' (' + item.thickness + 'mm)\\n').join('\\n') + '\\nReply \"YES\" to proceed or \"REDO TEXT\" to start over.' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        432,
+        160
+      ],
+      "id": "5edfd689-8af5-4df1-8bd1-a459a6693bf9",
+      "name": "Send WhatsApp Confirmation"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Workflow Configuration').first().json.supabaseUpsertUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $('Workflow Configuration').first().json.supabaseKey }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Workflow Configuration').first().json.supabaseKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{ $json.chat_id }}\",\n  \"quote_data\": {{ $json.itemsString }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        160
+      ],
+      "id": "6180931f-8c88-4ab0-98ee-3f39454911f8",
+      "name": "Supabase Upsert"
+    },
+    {
+      "parameters": {
+        "jsCode": "function stripCodeFences(s) {\n  return String(s || '')\n    .trim()\n    .replace(/^```json\\s*/i, '')\n    .replace(/^```\\s*/i, '')\n    .replace(/```$/i, '')\n    .trim();\n}\n\nfunction toNumber(v) {\n  const n = Number(v);\n  return Number.isFinite(n) ? n : null;\n}\n\nconst webhookBody = $('Webhook').first().json.body;\n\nconst rawText =\n  $json?.content?.parts?.[0]?.text ??\n  $json?.text ??\n  '';\n\nconst cleaned = stripCodeFences(rawText);\n\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  parsed = { items: [] };\n}\n\nlet items = Array.isArray(parsed.items) ? parsed.items : [];\n\nitems = items\n  .map((item) => ({\n    width_mm: toNumber(item.width_mm),\n    height_mm: toNumber(item.height_mm),\n    type: String(item.type || 'glass_panel'),\n    glassType: String(item.glassType || 'clear'),\n    thickness: toNumber(item.thickness) ?? (String(item.type || '').toLowerCase().includes('door') || String(item.type || '').toLowerCase().includes('shower') ? 10 : 6),\n    frameColor: String(item.frameColor || 'Silver'),\n  }))\n  .filter((i) => i.width_mm && i.height_mm);\n\nconst lines = items.map((item, idx) => {\n  return [\n    `Item ${idx + 1}: ${String(item.type).toUpperCase()}`,\n    `Size: ${item.width_mm}mm x ${item.height_mm}mm`,\n    `Glass: ${item.glassType} (${item.thickness}mm)`,\n    `Frame: ${item.frameColor}`,\n  ].join('\\n');\n});\n\nconst confirmationText =\n  items.length === 0\n    ? `I couldn't read clear measurements from your image.\\n\\nPlease reply \"REDO IMAGE\" and send a clearer photo (flat, good light, close enough to read).\\n`\n    : `Please confirm your glass details:\\n\\n${lines.join('\\n\\n')}\\n\\nReply \"YES\" to proceed or \"REDO IMAGE\" to send a new photo.`;\n\nreturn [\n  {\n    json: {\n      chat_id: webhookBody.chat_id,\n      items,\n      itemsString: JSON.stringify(items),\n      confirmationText,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        160
+      ],
+      "id": "1dcdef07-c505-47a1-b227-1dab8fb0acc8",
+      "name": "Format Measurement Data"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "sifosman.app.n8n.cloud",
+            "content-length": "388",
+            "accept": "application/json",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2400:6180:0:d0::14f0:2001",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9e365d487c3b9c62-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "2400:6180:0:d0::14f0:2001, 172.71.82.141",
+            "x-forwarded-host": "sifosman.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-40-88d9967ff-9d4wd",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2400:6180:0:d0::14f0:2001"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "first_name": "OWD",
+            "chat_id": "27658475289",
+            "user_location_gps": "{\"latitude\":-25.8249332,\"longitude\":28.1467276}",
+            "user_input_data": [
+              {
+                "question": "Great, please send me the image of your measurement now.",
+                "answer": "https://bot-data.s3.ap-southeast-1.wasabisys.com/upload/livechat/2026/3/whatsapp/248339-324783-1751831512446292.jpeg"
+              }
+            ],
+            "whatsapp_bot_username": "+27 66 307 7449"
+          },
+          "webhookUrl": "https://sifosman.app.n8n.cloud/webhook/9365303a-3a3a-4676-a61b-3221d1fcc5f7",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Format Measurement Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Confirmation": {
+      "main": [
+        []
+      ]
+    },
+    "Supabase Upsert": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Measurement Data": {
+      "main": [
+        [
+          {
+            "node": "Supabase Upsert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e6f7f1f5-6d5d-4b99-86f6-dad796cda5aa",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33f53a3b4d83000e68c4b5697f5022c173f43db99cc93da8da17684fff98fab1"
+  },
+  "id": "HUvVwfFt8BUS5RWB",
+  "tags": []
+}

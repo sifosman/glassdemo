@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Master Internal Strategy - OWD Solutions</title>
+  <style>
+    :root {
+      --primary: #0b1f3b;
+      --accent: #0a84ff;
+      --text: #202124;
+      --muted: #5f6368;
+      --border: #e0e0e0;
+      --bg: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .container { max-width: 900px; margin: 24px auto; padding: 24px; background: #fff; border: 1px solid var(--border); border-radius: 10px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid var(--primary); padding-bottom: 16px; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-img { height: 88px; width: auto; border-radius: 8px; display: block; }
+    h1 { margin: 0; font-size: 28px; color: var(--primary); }
+    h2 { font-size: 20px; color: #fff; background-color: var(--primary); padding: 10px 16px; border-radius: 6px; margin-top: 32px; }
+    h3 { margin: 16px 0 8px; font-size: 16px; color: var(--accent); }
+    p, li { line-height: 1.6; }
+    
+    .card { border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; background-color: #f8f9fa; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; background: #fff; }
+    th, td { padding: 12px 10px; border: 1px solid var(--border); vertical-align: top; }
+    th { text-align: left; font-size: 14px; color: var(--primary); background: #f0f7ff; }
+    
+    @media print {
+      body { background: #fff; }
+      .container { border: none; border-radius: 0; box-shadow: none; margin: 0; width: 100%; padding: 0; }
+      .no-print { display: none !important; }
+      @page { size: A4; margin: 16mm; }
+      h2 { page-break-after: avoid; border: 1px solid var(--primary); color: var(--primary); background: none; }
+      .card, table { page-break-inside: avoid; }
+    }
+    .btns { display: flex; gap: 8px; justify-content: flex-end; margin: 0 0 10px; }
+    .btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-weight: 600; font-family: inherit;}
+    .btn.secondary { background: #e9eef6; color: var(--primary); }
+    .muted { color: var(--muted); }
+    
+    .callout { border-left: 4px solid var(--accent); padding: 12px 16px; background-color: #f0f7ff; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  </style>
+  <script>
+    function downloadHTML() {
+      const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'internal_strategy_owd.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="no-print btns">
+      <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+      <button class="btn secondary" onclick="downloadHTML()">Download HTML</button>
+    </div>
+
+    <header>
+      <div class="logo">
+        <img src="logo.png" alt="Company logo" class="logo-img" onerror="this.style.display='none'" />
+        <div>
+          <h1>MASTER SALES STRATEGY (INTERNAL)</h1>
+          <div class="muted">Gauteng Glass Industry AI Automation</div>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <strong>Version:</strong> 3.0 (One-Tier pricing)<br/>
+        <strong>Date:</strong> 2026
+      </div>
+    </header>
+
+    <h2>1. Executive Summary</h2>
+    <div class="card">
+      <p><strong>The Crisis:</strong> Petrol has breached R25/L. A "Free Quote" now costs a glass shop roughly R500 in fuel and labor when they survey and quote manually for leads that don't close.</p>
+      <p><strong>The Solution:</strong> The OWD Glass-Engine. A 100% WhatsApp-native AI system that replaces the manual estimator. It reads text measurements or photo sketches, validates sizes, ensures SANS safety compliance, generates the PDF quote, and collects deposits—all before a bakkie leaves the shop.</p>
+      <p><strong>The Goal:</strong> 15-20 Professional-Tier Clients within 12 months, achieving ~R100,000+ MRR while commanding high-value R12,500 setup fees up front.</p>
+    </div>
+
+    <h2>2. The Triple-Feature "Profit Engine"</h2>
+    <p>We aren't selling a "chatbot." We are selling an automated staff member handling three specific modules:</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%">Module</th>
+          <th style="width: 45%">Feature</th>
+          <th style="width: 30%">Primary Goal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>The Estimator</strong></td>
+          <td>Handwritten OCR & Text Parsing</td>
+          <td>50% Job Deposit via link</td>
+        </tr>
+        <tr>
+          <td><strong>The Closer</strong></td>
+          <td>Shower Area Analysis (SANS rules)</td>
+          <td>R550 Survey Fee pre-collection</td>
+        </tr>
+        <tr>
+          <td><strong>The Filter</strong></td>
+          <td>Window Repair Triage</td>
+          <td>R350 Call-out Fee pre-collection</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Value Proposition Analysis (The ROI Math)</h2>
+    <p>This data is used to justify the R12,500 Setup and R6,000 Monthly fee.</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 35%">Metric</th>
+          <th style="width: 35%">Manual Process</th>
+          <th style="width: 30%">OWD Automation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Time per Quote</strong></td>
+          <td>2–3 Hours</td>
+          <td>< 5 Minutes</td>
+        </tr>
+        <tr>
+          <td><strong>Cost per Quote</strong></td>
+          <td>R400 (Labor) + R200 (Fuel)</td>
+          <td>R0 (Automated)</td>
+        </tr>
+        <tr>
+          <td><strong>Safety Check</strong></td>
+          <td>Human Memory (Error-prone)</td>
+          <td>AI-Automated SANS 10400-N</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout">
+      <strong>Bottom Line:</strong> At 30 quotes a month, the system saves the shop R18,000 in operational waste. A R6,000 subscription is an ROI of 3:1 before even considering new sales revenue generated by faster responses.
+    </div>
+
+    <h2>4. Pricing & Sales Partner Structure</h2>
+    <p>We have simplified to **One Primary Package** to streamline sales and command a premium positioning. We do not sell "cheap" software; we sell custom integration.</p>
+    
+    <h3>The Pricing Offering</h3>
+    <ul>
+      <li><strong>Professional Tier Setup:</strong> R12,500 Once-Off</li>
+      <li><strong>Professional Tier Monthly:</strong> R6,000/mo (Includes up to 50 quotes, support, AI processing)</li>
+      <li><strong>Enterprise Tier:</strong> Custom quoted entirely based on API volume mapping and multi-branch rollouts. Minimum R25,000+ setup and R10,000+/mo.</li>
+    </ul>
+
+    <h3>The Sales Partner Commission Structure</h3>
+    <p>We incentivize the sales partner heavily to replace his current generic website sales hustle with our high-ticket software.</p>
+    <div class="card">
+      <p><strong>Setup Bonus:</strong> 30% of the Setup Fee (<strong>R3,750</strong> per closed deal).</p>
+      <p><strong>Monthly Trail:</strong> 12.5% of the subscription (<strong>R750/month</strong> per active client).</p>
+      <p><em>Example: If the partner signs 5 clients rapidly, they earn R18,750 upfront in commissions and build a passive R3,750/month trail income just from those 5.</em></p>
+    </div>
+
+    <h2>5. Critical Architecture: The "Developer's Edge"</h2>
+    <p>As the core architect, these three technical functions remain the "moat" that competitors cannot easily copy:</p>
+    <ul>
+      <li><strong>Liability Shifting:</strong> Measurements are parsed but explicitly confirmed by the customer via the web-dashboard/WhatsApp UI. <em>"Measurements confirmed by customer."</em> Protected liability.</li>
+      <li><strong>SANS Guardrails:</strong> Automatic flagging if a customer wants 4mm glass where 6.38mm safety glass is required under SANS 10400-N.</li>
+      <li><strong>Dynamic Database Management:</strong> n8n pulls from Supabase. When glass suppliers raise prices by 8%, the client's whole quoting system updates via one DB change.</li>
+    </ul>
+
+    <h2>6. Market Segmentation (Top Targets)</h2>
+    <p>Lead with TIER A (Highest return, biggest pain).</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%">Segment</th>
+          <th style="width: 35%">Focus Module</th>
+          <th style="width: 40%">Exemplar Targets</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Tier A: Frameless & Elite</strong></td>
+          <td>The Closer (Feature 2)</td>
+          <td>Elite Showers, Ronal Bathrooms, Stainless Design SA. Technical, high-value quotes.</td>
+        </tr>
+        <tr>
+          <td><strong>Tier B: Hybrid Alu/Glass</strong></td>
+          <td>The Estimator (Feature 1)</td>
+          <td>Jaycee Glass, GA Glass. Large volumes of messy handwritten notes.</td>
+        </tr>
+        <tr>
+          <td><strong>Tier C: Enterprise</strong></td>
+          <td>The Filter (Feature 3)</td>
+          <td>Glass Planet, PG Glass Branches. API-level integrations for massive volume triage.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>7. Realistic 12-Month Revenue Target</h2>
+    <div class="card">
+      <p><strong>Month 3:</strong> 4 Clients = R24,000 MRR | ~R50,000 in Setup Fees Collected</p>
+      <p><strong>Month 6:</strong> 8 Clients = R48,000 MRR | ~R100,000 in Setup Fees Collected</p>
+      <p><strong>Month 12:</strong> 15-20 Clients = R90,000-R120,000 MRR</p>
+      <p><em>A smaller number of high-quality clients at R6k/mo is far better than a massive volume of low-tier clients requiring support overhead.</em></p>
+    </div>
+
+  </div>
+</body>
+</html>

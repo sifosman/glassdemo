@@ -1,0 +1,370 @@
+{
+  "name": "Shower Door",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c5e71414-4414-45ea-86ff-5e6a0e3537e5",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "55c8793a-fb0f-4a12-b146-a9a9bbf608f7",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -448,
+        96
+      ],
+      "webhookId": "c5e71414-4414-45ea-86ff-5e6a0e3537e5"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.user_input_data[0].answer }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "d3e43cc9-6f75-4c58-8d75-1cd08d6d333e",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -48,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "text": "Role: You are a Senior Technical Surveyor for OWD Solutions, specializing in the South African high-end glass and aluminum trade with 15 years of experience.\n\nTask: Analyze the bathroom photo and provide a professional feasibility and \"Sales-Ready\" estimate for a new shower enclosure.\n\nStrict Analysis Guidelines:\n\nLayout ID: Identify if it is an Alcove (3 walls), Corner (2 walls), or Walk-in (Single panel).\n\nThe \"Premium\" Recommendation: Default to 10mm Toughened Glass frameless systems. Use terms like \"Patch fittings\" or \"Minimalist U-channels.\" Only suggest 8mm or framed if the space looks budget-constrained or structural walls are missing.\n\nTechnical Risk (Critical): * Showerhead: Specifically warn if the showerhead points toward the potential door (Water migration risk).\n\nStructural: Mention if hinges require a solid brick wall vs. a hollow partition.\n\nPrice Anchoring (The Estimate): Provide a ballpark range based on 2026 South African market rates.\n\nAlcove: R7,500 – R11,000.\n\nCorner: R9,500 – R14,000.\n\nWalk-in: R4,500 – R7,500.\n\nThe Closing Hook (The R550 Deposit): Explicitly state that a R550 Technical Survey Deposit is required to confirm laser-measurements and that this is 100% deductible from the final invoice.\n\nSafety: Always cite SANS 10400-N and SANS 1263-1 compliance.\n\nTone: Technical, authoritative, and high-end.\n\nOutput Format: Output your response as a raw JSON object with a single key named consultant_note. Do not use markdown, backticks, or any introductory text.\n\nExample JSON Structure:\n{\"consultant_note\": \"I've analyzed your layout! This Corner Enclosure is perfect for a 10mm Frameless system with patch fittings. Note: The showerhead position requires high-seal h-profiles to prevent leaks. Estimated Budget: R10,500 - R13,500. SANS 10400-N compliant. Next step: Book your Laser-Survey for R550 (deductible from your final invoice) here: [Link]\"}",
+        "inputType": "binary",
+        "options": {}
+      },
+      "id": "ec619bda-9c5e-4a81-8072-55d8a99fd77f",
+      "name": "Gemini Vision Analysis",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        176,
+        -64
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fTA5h4sSgCbnGFHg",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get raw inputs from previous nodes\nconst rawText = $('Gemini Vision Analysis').first().json.content.parts[0].text;\nconst distanceMeters = $('Calculate Distance via Google Maps').first().json.rows[0].elements[0].distance.value;\nconst durationText = $('Calculate Distance via Google Maps').first().json.rows[0].elements[0].duration.text;\n\n// 2. Industry Standard Constants (South Africa)\nconst baseSurveyFee = 350; \nconst costPerKm = 6.50;\n\n// 3. Robust JSON Extraction (The \"Regex\" Fix)\n// This finds the first '{' and last '}' and ignores everything outside them\nconst jsonRegex = /\\{[\\s\\S]*\\}/;\nconst match = rawText.match(jsonRegex);\n\nif (!match) {\n  throw new Error(\"Gemini failed to return a valid JSON object. Please check the image quality.\");\n}\n\nconst parsedData = JSON.parse(match[0]);\n\n// 4. Calculations\nconst distanceKm = (Number(distanceMeters) / 1000).toFixed(2);\nconst totalSurveyFee = (baseSurveyFee + (parseFloat(distanceKm) * costPerKm)).toFixed(2);\n\n// 5. Clean the Expert Advice text\n// We pull ONLY the value from the JSON key, and fix any double-newlines\nlet expertAdvice = parsedData.consultant_note || \"Our technician will assess the space on-site for a perfect fit.\";\nexpertAdvice = expertAdvice.replace(/\\\\n/g, '\\n'); \n\n// 6. Final Output Object for BotSailor\nreturn [{\n  json: {\n    // These variables go to your WhatsApp message\n    expert_advice: expertAdvice, \n    survey_fee: totalSurveyFee,\n    distance_km: distanceKm,\n    duration: durationText,\n    \n    // Metadata for your internal records\n    system_type: parsedData.layout_type || \"Shower Enclosure\",\n    frame_finish: parsedData.frame_finish || \"Standard\",\n    compliance_note: \"SANS 10400-N & 1263-1 Compliant\",\n    \n    // Webhook data for routing\n    customer_phone: $('Webhook Trigger').first().json.body.chat_id,\n    checkout_url: `https://your-payment-link.com/pay?amount=${totalSurveyFee}&ref=${$('Webhook Trigger').first().json.body.chat_id}`\n  }\n}];"
+      },
+      "id": "41afeb03-5f8b-4f5c-aede-a895635f3ea5",
+      "name": "Parse & Calculate Quote",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://botsailor.com/api/v1/whatsapp/send",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "apiToken",
+              "value": "17624|mrHKuEUJ3ugTwXrKNcPu3hmhj9wcxoY2YHTSbrE3048e937d"
+            },
+            {
+              "name": "phone_number_id",
+              "value": "=967736983089856"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{ $('Webhook Trigger').item.json.body.chat_id }}"
+            },
+            {
+              "name": "message",
+              "value": "=I've analyzed your bathroom photo! 🚿\n\n*Expert Assessment*\n{{ $json.data.expert_advice }}\n\n*Safety Standard*\n{{ $json.data.safety_note }}\n\n*Survey Fee*\nBecause shower glass is custom-made, we require a professional laser-measurement.\n\nSurvey & Travel Fee: R{{ $json.data.total_price }}\n\n👉 Pay here to book your survey:\n{{ $json.checkout_url }}​"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11d5bea7-9da2-4abc-afb6-663a3273d74b",
+      "name": "Send Response via BotSailor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        880,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-2",
+              "name": "materials_fitting",
+              "value": 1850,
+              "type": "number"
+            },
+            {
+              "id": "id-4",
+              "name": "botsailor_api_url",
+              "value": "<__PLACEHOLDER_VALUE__BotSailor Send Message API Endpoint__>",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "base_call_out_fee",
+              "value": 350,
+              "type": "number"
+            },
+            {
+              "id": "id-6",
+              "name": "cost_per_km",
+              "value": 6.5,
+              "type": "number"
+            },
+            {
+              "id": "id-7",
+              "name": "factory_latitude",
+              "value": "-25.824227434944238",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "factory_longitude",
+              "value": "28.14657",
+              "type": "string"
+            },
+            {
+              "id": "id-9",
+              "name": "google_maps_api_key",
+              "value": "AIzaSyBjd1KYtTaAzxzdw5ayGwwMu5Sex-gKQLI",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "4a790eee-c24a-45e5-90ad-8b2f80902c2e",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "origins",
+              "value": "={{ $('Workflow Configuration').first().json.factory_latitude }},{{ $('Workflow Configuration').first().json.factory_longitude }}"
+            },
+            {
+              "name": "destinations",
+              "value": "={{ $('Webhook Trigger').item.json.body.user_input_data[1].answer }}"
+            },
+            {
+              "name": "key",
+              "value": "={{ $('Workflow Configuration').first().json.google_maps_api_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "485d6281-0300-467f-bfed-7ff803b02c21",
+      "name": "Calculate Distance via Google Maps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://glassdemo.vercel.app/api/repair-request",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customer_phone\": \"{{ $json.customer_phone }}\",\n  \"customer_location\": \"{{ $('Webhook Trigger').item.json.body.user_input_data[1].answer }}\",\n  \"system_type\": \"{{ $json.system_type }}\",\n  \"glass_type\" : \"{{ $json.compliance_note }}\",\n  \"frame_finish\": \"{{ $json.frame_finish }}\",\n  \"expert_advice\": \"{{ $json.expert_advice }}\",\n  \"safety_note\": \"{{ $json.compliance_note }}\",\n  \"distance_km\": {{ $json.distance_km }},\n  \"duration\": \"{{ $json.duration }}\",\n  \"base_call_out_fee\": {{ $('Workflow Configuration').item.json.base_call_out_fee }},\n  \"cost_per_km\": {{ $('Workflow Configuration').item.json.cost_per_km }},\n  \"calculated_call_out_fee\": {{ $json.survey_fee }},\n\n  \"total_price\": {{ $json.survey_fee }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        656,
+        96
+      ],
+      "id": "d5120ee2-0065-468d-afaf-5f74fc1005d9",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {
+    "Webhook Trigger": [
+      {
+        "json": {
+          "headers": {
+            "host": "sifosman.app.n8n.cloud",
+            "content-length": "527",
+            "accept": "application/json",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "128.199.112.238",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9d8195489dbb5f9d-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "128.199.112.238, 162.158.163.184",
+            "x-forwarded-host": "sifosman.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-40-88d9967ff-qt8kz",
+            "x-is-trusted": "yes",
+            "x-real-ip": "128.199.112.238"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "subscriber_id": "27658475289-324783",
+            "first_name": "OWD",
+            "chat_id": "27658475289",
+            "user_input_data": [
+              {
+                "question": "Please send a photo of the area where the shower glass is needed, so we can try our best to assist you.",
+                "answer": "https://bot-data.s3.ap-southeast-1.wasabisys.com/upload/2026/3/livechat/248339-324783-1883567569029787.jpeg"
+              },
+              {
+                "question": "Great thanks. Also please confirm the location where this Shower door is required?",
+                "answer": "122 jamestown avenue, gauteng"
+              }
+            ],
+            "whatsapp_bot_username": "+27 66 307 7449"
+          },
+          "webhookUrl": "https://sifosman.app.n8n.cloud/webhook/c5e71414-4414-45ea-86ff-5e6a0e3537e5",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Gemini Vision Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Vision Analysis": {
+      "main": [
+        [
+          {
+            "node": "Calculate Distance via Google Maps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Calculate Quote": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Distance via Google Maps": {
+      "main": [
+        [
+          {
+            "node": "Parse & Calculate Quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send Response via BotSailor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3ff2205e-d3dd-4fa8-bccb-7021cd38c063",
+  "meta": {
+    "instanceId": "33f53a3b4d83000e68c4b5697f5022c173f43db99cc93da8da17684fff98fab1"
+  },
+  "id": "iIuBOluCVI1JIOcK",
+  "tags": []
+}

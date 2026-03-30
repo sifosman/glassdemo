@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The OWD Glass-Engine: Sales Bible</title>
+  <style>
+    :root {
+      --primary: #0b1f3b;
+      --accent: #0a84ff;
+      --text: #202124;
+      --muted: #5f6368;
+      --border: #e0e0e0;
+      --bg: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .container { max-width: 900px; margin: 24px auto; padding: 24px; background: #fff; border: 1px solid var(--border); border-radius: 10px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid var(--primary); padding-bottom: 16px; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-img { height: 88px; width: auto; border-radius: 8px; display: block; }
+    h1 { margin: 0; font-size: 28px; color: var(--primary); }
+    h2 { font-size: 20px; color: #fff; background-color: var(--primary); padding: 10px 16px; border-radius: 6px; margin-top: 32px; }
+    h3 { margin: 16px 0 8px; font-size: 16px; color: var(--accent); }
+    p, li { line-height: 1.6; }
+    
+    .card { border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; background-color: #f8f9fa; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; background: #fff; }
+    th, td { padding: 12px 10px; border: 1px solid var(--border); vertical-align: top; }
+    th { text-align: left; font-size: 14px; color: var(--primary); background: #f0f7ff; }
+    
+    @media print {
+      body { background: #fff; }
+      .container { border: none; border-radius: 0; box-shadow: none; margin: 0; width: 100%; padding: 0; }
+      .no-print { display: none !important; }
+      @page { size: A4; margin: 16mm; }
+      h2 { page-break-after: avoid; border: 1px solid var(--primary); color: var(--primary); background: none; }
+      .card, table { page-break-inside: avoid; }
+    }
+    .btns { display: flex; gap: 8px; justify-content: flex-end; margin: 0 0 10px; }
+    .btn { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-weight: 600; font-family: inherit;}
+    .btn.secondary { background: #e9eef6; color: var(--primary); }
+    .muted { color: var(--muted); }
+    
+    .script-box { border-left: 4px solid var(--accent); padding: 12px 16px; background-color: #f0f7ff; font-style: italic; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  </style>
+  <script>
+    function downloadHTML() {
+      const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sales_bible_owd.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="no-print btns">
+      <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+      <button class="btn secondary" onclick="downloadHTML()">Download HTML</button>
+    </div>
+
+    <header>
+      <div class="logo">
+        <img src="logo.png" alt="Company logo" class="logo-img" onerror="this.style.display='none'" />
+        <div>
+          <h1>SALES BIBLE (2026)</h1>
+          <div class="muted">The OWD Glass-Engine</div>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <strong>Target:</strong> Glass & Aluminum<br/>
+        <strong>Mission:</strong> Stop "Blind Quotes"
+      </div>
+    </header>
+
+    <h2>1. The 30-Second "Petrol Hook"</h2>
+    <p>Use this as your opening line on calls or in-person. It immediately hits their biggest pain point: wasted time and fuel on jobs that don't close.</p>
+    <div class="script-box">
+      "Hi [Owner Name], I’m [Name] from OWD Solutions. With petrol hitting R25/L+, a 'Free Quote' isn't free anymore—it's costing you roughly R500 every time a bakkie leaves the shop for a lead that doesn't close.<br><br>
+      We've built an AI Auto-Estimator that lives right in your WhatsApp. Your customers just send a photo of a rough sketch or a simple text message with sizes, and the AI instantly converts it into a professional, SANS-compliant PDF quote and collects a survey deposit before your bakkie ever leaves the shop. Can I show you how we're making bakkies self-funding?"
+    </div>
+
+    <h2>2. The Three Revenue Modules</h2>
+    <p>Explain that they aren't getting a generic 'chatbot'. They are hiring an 'AI Staff Member' that handles three distinct jobs:</p>
+    <div class="card">
+      <p><strong>The Estimator:</strong> "It reads your handwritten site notes or text measurements and generates a professional PDF quote instantly."</p>
+      <p><strong>The Closer:</strong> "It looks at a photo of a bathroom and gives technical advice (SANS safety) and collects the R550 survey fee before you drive out."</p>
+      <p><strong>The Filter:</strong> "It handles small window repairs from a customer's photo, giving a price and collecting the call-out fee immediately so your time isn't wasted."</p>
+    </div>
+
+    <h2>3. The "Zero-Friction" Demo Script</h2>
+    <p>Show the client how easy it is for THEIR customer. No apps. No web forms. Everything happens right on WhatsApp.</p>
+    <ul>
+      <li><strong>Step 1:</strong> "Your customer sends a photo of a sketch or a bathroom to your WhatsApp."</li>
+      <li><strong>Step 2:</strong> "The AI reads the measurements. It doesn't guess—it accurately parses the data."</li>
+      <li><strong>Step 3:</strong> "The bot sends a confirmation: 'I've picked up a 900x2100mm opening. Is this correct?'"</li>
+      <li><strong>Step 4:</strong> "The customer taps [✅ Yes]. No typing, no friction."</li>
+      <li><strong>Step 5:</strong> "The system generates a SANS-compliant PDF quote and a Payment Link (PayFast/Yoco) for the deposit instantly."</li>
+    </ul>
+
+    <h2>4. Handling Objections (The "Closer" Logic)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 40%">The Objection</th>
+          <th style="width: 60%">The Winning Response</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>"AI can't read my handwriting."</td>
+          <td>"Actually, it can. But we built in a Safety Valve. The AI shows the measurements back to the user on WhatsApp. They have to click 'Yes' to confirm. It shifts the liability of the measurement to the customer, not you."</td>
+        </tr>
+        <tr>
+          <td>"R6,000/month is a lot of money."</td>
+          <td>"An estimator costs you R15k–R20k/month. This does 80% of that work for R6k. Plus, if it collects just 12 survey fees (R500 each), the system is free. Everything after that is pure profit."</td>
+        </tr>
+        <tr>
+          <td>"My customers want to talk to me."</td>
+          <td>"They still can. But instead of saying 'I'll get back to you with a quote tomorrow,' you say 'The quote is in your WhatsApp right now.' Speed closes deals. This makes you the most professional shop in Gauteng."</td>
+        </tr>
+        <tr>
+          <td>"Is it complicated to set up?"</td>
+          <td>"No. You pay the setup fee (R15,000), and we do all the heavy lifting. We plug it into the Official WhatsApp API, load your price list, and configure the workflow. We handle the tech; you handle the glass."</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>5. The Activation Close (Call to Action)</h2>
+    <p>Don't ask them if they want to 'think about it.' Ask them to start the onboarding process. Emphasize that every day they wait is another R500 in wasted petrol.</p>
+    <div class="script-box">
+      "We only onboard a limited number of new partners each month to ensure the AI is perfectly calibrated to your pricing and SANS requirements.<br><br>
+      If you're ready to stop the petrol bleed, we can get your integration started today. Let's get your price lists and logo over to my technical team so we can lock in your spot. Which payment method works best for the setup fee?"
+    </div>
+
+    <h2>6. Pro-Tips For Your Pitches</h2>
+    <div class="card">
+      <p><strong>The "10 PM" Reality:</strong> Ask the owner, <em>"Are you still doing quotes at 10 PM?"</em> Every founder/owner will validate this pain. Tell them the bot works while they sleep.</p>
+      <p><strong>The "Liability" Angle:</strong> Emphasize that the customer confirms the size on their own phone. This prevents "he-said-she-said" arguments when glass is cut wrong.</p>
+      <p><strong>Focus on ROI:</strong> Emphasize the math. At 30 quotes a month, saving 2 hours of labor each, they are saving R18,000+ per month. The R6,000 monthly fee is a massive net win.</p>
+    </div>
+
+    <footer style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 16px; font-size: 12px; color: var(--muted); text-align: center;">
+      OWD Solutions - Internal Sales Document
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pricing Proposal - OWD Glass-Engine</title>
+  <style>
+    :root {
+      --primary: #0b1f3b;
+      --accent: #0a84ff;
+      --text: #202124;
+      --muted: #5f6368;
+      --border: #e0e0e0;
+      --bg: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 24px auto;
+      padding: 24px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-img {
+      height: 88px;
+      width: auto;
+      border-radius: 8px;
+      display: block;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      color: var(--primary);
+    }
+
+    h2 {
+      font-size: 20px;
+      color: var(--primary);
+      margin-top: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      color: var(--primary);
+    }
+
+    p,
+    li {
+      line-height: 1.6;
+    }
+
+    .meta {
+      text-align: right;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      margin-bottom: 16px;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    th {
+      text-align: left;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: #f8f9fa;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    .totals {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr 240px;
+    }
+
+    .totals .label {
+      text-align: right;
+      color: var(--muted);
+      padding-right: 16px;
+    }
+
+    .totals .value {
+      text-align: right;
+      font-weight: 600;
+    }
+
+    footer {
+      margin-top: 28px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .container {
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        width: 100%;
+        padding: 0;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      @page {
+        size: A4;
+        margin: 16mm;
+      }
+
+      table,
+      th,
+      td {
+        page-break-inside: avoid;
+      }
+
+      .card {
+        page-break-inside: avoid;
+      }
+    }
+
+    .btns {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin: 0 0 10px;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: inherit;
+    }
+
+    .btn.secondary {
+      background: #e9eef6;
+      color: var(--primary);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .highlight {
+      background-color: #f0f7ff;
+      padding: 16px;
+      border-radius: 8px;
+      border-left: 4px solid var(--accent);
+      margin: 16px 0;
+    }
+  </style>
+  <script>
+    function downloadHTML() {
+      const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'owd_pricing_proposal.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="no-print btns">
+      <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+      <button class="btn secondary" onclick="downloadHTML()">Download HTML</button>
+    </div>
+
+    <header>
+      <div class="logo">
+        <img src="logo.png" alt="Company logo" class="logo-img" onerror="this.style.display='none'" />
+        <div>
+          <h1>PRICING PROPOSAL</h1>
+          <div class="muted">OWD Glass-Engine System</div>
+        </div>
+      </div>
+      <div class="meta">
+        <div><strong>Date</strong>: <span id="currentDate"></span></div>
+        <div><strong>Valid For</strong>: 14 Days</div>
+      </div>
+    </header>
+
+    <div class="card">
+      <h3>Prepared By</h3>
+      <p><strong>OWD Solutions</strong></p>
+      <p>Email: info@owdsolutions.co.za</p>
+      <p>Phone: 0658475289</p>
+    </div>
+
+    <h2>Executive Summary</h2>
+    <p>
+      The <strong>OWD Glass-Engine</strong> is a 100% WhatsApp-native AI system designed specifically for the Gauteng
+      glass and aluminum industry. It replaces time-consuming manual estimating by qualifying leads, parsing handwritten
+      or text measurements, ensuring SANS safety compliance, and collecting instant deposits—all before your team leaves
+      the office.
+    </p>
+
+    <h2>Investment Structure</h2>
+    <p>We provide a comprehensive, turnkey system with transparent pricing designed for rapid ROI.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 70%">Item Description</th>
+          <th class="right" style="width: 30%">Amount (ZAR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <strong>System Setup & Integration (Once-off)</strong><br />
+            <span class="muted">Complete deployment of the OWD Glass-Engine, including:</span>
+            <ul style="margin: 4px 0 0; padding-left: 20px; font-size: 13px; color: var(--muted);">
+              <li>Official WhatsApp Business API Integration via BotSailor</li>
+              <li>Setup of 5 distinct AI Chat Flows (Estimations, Surveys, Repairs, etc.)</li>
+              <li>Customized n8n Workflow Automation for your business logic</li>
+              <li>Customer Web Dashboard for measurement verification</li>
+              <li>Automated PDF Generation with your company branding</li>
+              <li>Built-in SANS 10400-N safety guardrails</li>
+              <li>Payment gateway integration (PayFast/Yoco) for deposits</li>
+            </ul>
+          </td>
+          <td class="right" style="vertical-align: middle;">R15,000.00</td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Monthly Licensing & Support (Monthly)</strong><br />
+            <span class="muted">Ongoing service covering:</span>
+            <ul style="margin: 4px 0 0; padding-left: 20px; font-size: 13px; color: var(--muted);">
+              <li>Up to 500 automated quotes per month</li>
+              <li>Cloud hosting and API infrastructure costs</li>
+              <li>Continuous AI model tuning and workflow maintenance</li>
+              <li>Priority technical support</li>
+            </ul>
+          </td>
+          <td class="right" style="vertical-align: middle;">R6,000.00 / mo</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight">
+      <h3>Return on Investment (ROI)</h3>
+      <p style="margin-bottom: 0;">
+        <strong>Manual Cost:</strong> ~R600 (2 hrs labor + fuel) per quote. 30 quotes/mo = R18,000 cost.<br />
+        <strong>OWD Glass-Engine Cost:</strong> R6,000/mo.<br />
+        <em>Every month you process 30 quotes through our system, you save approximately R12,000 in pure operational
+          waste.</em>
+      </p>
+    </div>
+
+    <h2>Scope of Work & Conditions</h2>
+    <p>To ensure a successful and transparent partnership, the following parameters clearly define our offering:</p>
+    <ul style="font-size: 14px; color: var(--text);">
+      <li style="margin-bottom: 8px;"><strong>Standard Integration:</strong> The setup fee covers the precise
+        configuration of up to 5 WhatsApp chat flows (e.g., Showers, Repairs). Additional custom pathways or CRM
+        integrations beyond the initial scope will be quoted separately.</li>
+      <li style="margin-bottom: 8px;"><strong>Platform Environment:</strong> Our automation operates within the
+        established frameworks of the official WhatsApp API, BotSailor, and our backend logic engine. It is a dedicated
+        quote-automation tool, not a completely custom-coded ERP software suite.</li>
+      <li style="margin-bottom: 8px;"><strong>Pricing & Liability:</strong> The AI constructs quotes based strictly on
+        the pricing matrices you provide. While the customer verifies sizes via the dashboard before the quote is
+        generated, final responsibility for quality control, site installation, and honoring prices rests entirely with
+        your business.</li>
+      <li style="margin-bottom: 8px;"><strong>WhatsApp API Fees:</strong> The monthly subscription (R6,000) covers our
+        proprietary AI processing, workflow hosting, system maintenance, and support. It does not cover Meta's
+        (Facebook) direct per-conversation API messaging fees, which are nominally billed directly to your business
+        account by Meta.</li>
+      <li style="margin-bottom: 8px;"><strong>Maintenance & Support:</strong> The monthly fee includes bug fixes, server
+        uptime, AI model fine-tuning, and priority technical support during standard business hours. Structural changes
+        or entirely new feature developments are treated as separate projects.</li>
+    </ul>
+
+    <h2>Next Steps</h2>
+    <p>
+      To proceed with the deployment of your automated quoting system, please contact us to schedule the onboarding
+      phase. We will require your product pricing matrices, business logo, and preferred payment gateway details.
+    </p>
+
+    <footer>
+      <div>OWD Solutions - Revolutionizing Glass Quoting</div>
+      <div>Confidential Proposal</div>
+    </footer>
+  </div>
+
+  <script>
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-ZA', options);
+  </script>
+</body>
+
+</html>

@@ -13,8 +13,12 @@ type QuoteWithPaymentDetails = Quote & {
   depositPaid: number;
   depositPaidAt?: string;
   acceptedAt?: string;
+  balancePaid?: number;
+  balancePaidAt?: string;
+  fullyPaidAt?: string;
   pdfUrl?: string;
   invoicePdfUrl?: string;
+  statementPdfUrl?: string;
 };
 
 type CreateInvoiceInput = {
@@ -263,12 +267,16 @@ export class DatabaseService {
         expiryDate: quoteData.expiry_date || '',
         pdfUrl: quoteData.pdf_url || undefined,
         invoicePdfUrl,
+        statementPdfUrl: quoteData.statement_pdf_url || undefined,
         status: quoteData.status,
         depositRequired: quoteData.deposit_required,
         depositAmount: quoteData.deposit_amount,
         depositPaid: quoteData.deposit_paid,
         depositPaidAt: quoteData.deposit_paid_at || undefined,
-        acceptedAt: quoteData.accepted_at || undefined
+        acceptedAt: quoteData.accepted_at || undefined,
+        balancePaid: quoteData.balance_paid,
+        balancePaidAt: quoteData.balance_paid_at || undefined,
+        fullyPaidAt: quoteData.fully_paid_at || undefined
       };
 
       return transformedQuote;

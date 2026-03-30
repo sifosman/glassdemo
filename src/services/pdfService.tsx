@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, pdf, Svg, Rect, Line, Path } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf, Svg, Rect, Line, Path, Link } from '@react-pdf/renderer';
 import { Quote, CalculatedItem } from './glassQuoteService';
 import fs from 'fs';
 import path from 'path';
@@ -85,6 +85,42 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: BRAND.line, marginVertical: 10 },
   paymentBadge: { borderWidth: 1, borderColor: BRAND.line, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: BRAND.bg, alignSelf: 'flex-start' },
   paymentBadgeText: { fontSize: 9.5, color: BRAND.primaryDark, fontWeight: 700 },
+  // Payment button styles
+  paymentButton: {
+    backgroundColor: BRAND.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  paymentButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 700,
+  },
+  paymentSection: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: BRAND.bg,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: BRAND.line,
+    alignItems: 'center',
+  },
+  paymentSectionTitle: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: BRAND.primaryDark,
+    marginBottom: 8,
+  },
+  paymentSectionText: {
+    fontSize: 9.5,
+    color: BRAND.muted,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
 });
 
 interface QuoteDocumentProps {
@@ -506,6 +542,22 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({ quote }) => {
             Lead time and installation dates are confirmed after final on-site measure. All glazing will be supplied and installed in accordance with SANS 10400-N where applicable.
           </Text>
         </View>
+
+        {/* Payment Section */}
+        <View style={styles.paymentSection}>
+          <Text style={styles.paymentSectionTitle}>Accept Your Quote</Text>
+          <Text style={styles.paymentSectionText}>
+            Secure your order by paying the 50% deposit of {formatMoney(quote.total * 0.5)}.
+            Click the button below to proceed with payment.
+          </Text>
+          <Link
+            src={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app'}/quote/${quote.quoteNumber}`}
+          >
+            <View style={styles.paymentButton}>
+              <Text style={styles.paymentButtonText}>Pay Deposit Now</Text>
+            </View>
+          </Link>
+        </View>
       </Page>
 
       {schedulePages.map((pageRows, pageIdx) => (
@@ -817,6 +869,22 @@ export class PDFService {
                 This invoice reflects the deposit received for the above quotation. The remaining balance is due strictly upon completion of installation unless otherwise agreed in writing.
               </Text>
             </View>
+
+            {/* Balance Payment Section */}
+            <View style={styles.paymentSection}>
+              <Text style={styles.paymentSectionTitle}>Balance Payment Required</Text>
+              <Text style={styles.paymentSectionText}>
+                Remaining balance of {formatMoney(remainingBalance)} is due upon completion of installation.
+                Click below to pay now or pay on-site during installation.
+              </Text>
+              <Link
+                src={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app'}/quote/${quote.quoteNumber}/pay-balance`}
+              >
+                <View style={styles.paymentButton}>
+                  <Text style={styles.paymentButtonText}>Pay Balance Now</Text>
+                </View>
+              </Link>
+            </View>
           </Page>
         </Document>
       );
@@ -833,6 +901,133 @@ export class PDFService {
     } catch (error) {
       console.error('Error generating Invoice PDF:', error);
       throw new Error('Failed to generate Invoice PDF');
+    }
+  }
+
+  async generateStatementPDF(
+    quote: Quote & { depositPaid?: number; depositAmount?: number; balancePaid?: number; balancePaidAt?: string },
+    paymentHistory: Array<{ type: 'deposit' | 'balance'; amount: number; date: string; transactionRef: string }>
+  ): Promise<Buffer> {
+    try {
+      const StatementDocument = (
+        <Document>
+          <Page size="A4" style={styles.page}>
+            <PdfHeader
+              title="Statement of Account"
+              meta={[
+                { k: 'Quote No', v: quote.quoteNumber },
+                { k: 'Date', v: formatDateZA(new Date().toISOString()) },
+              ]}
+            />
+            <PdfFooter left="This statement reflects all charges and payments for your records." right="OWD Glass" />
+
+            <View style={[styles.card, { marginBottom: 12 }]}>
+              <Text style={styles.sectionTitle}>Customer Information</Text>
+              <View style={[styles.keyValueGrid, { marginTop: 6 }]}>
+                <View style={styles.keyValueCol}>
+                  <View style={styles.kvRow}>
+                    <Text style={styles.kvKey}>Customer</Text>
+                    <Text style={styles.kvValue}>{quote.customer.name}</Text>
+                  </View>
+                  <View style={styles.kvRow}>
+                    <Text style={styles.kvKey}>Email</Text>
+                    <Text style={styles.kvValue}>{quote.customer.email || '-'}</Text>
+                  </View>
+                  <View style={styles.kvRow}>
+                    <Text style={styles.kvKey}>Phone</Text>
+                    <Text style={styles.kvValue}>{quote.customer.phone || '-'}</Text>
+                  </View>
+                </View>
+                <View style={styles.keyValueCol}>
+                  <View style={styles.kvRow}>
+                    <Text style={styles.kvKey}>Billing Address</Text>
+                    <Text style={styles.kvValue}>{quote.customer.address || '-'}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <Text style={styles.sectionTitle}>Transaction History</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.th, { flex: 2 }]}>Description</Text>
+                <Text style={[styles.th, { width: 80, textAlign: 'right' }]}>Date</Text>
+                <Text style={[styles.th, { width: 80, textAlign: 'right' }]}>Amount</Text>
+                <Text style={[styles.th, { width: 80, textAlign: 'right' }]}>Status</Text>
+              </View>
+
+              {/* Quote Total Row */}
+              <View style={styles.tr}>
+                <Text style={[styles.td, { flex: 2 }]}>Quote Total - {quote.quoteNumber}</Text>
+                <Text style={[styles.td, { width: 80, textAlign: 'right' }]}>{formatDateZA(quote.createdDate)}</Text>
+                <Text style={[styles.td, { width: 80, textAlign: 'right' }]}>{formatMoney(quote.total)}</Text>
+                <Text style={[styles.td, { width: 80, textAlign: 'right' }]}>Billed</Text>
+              </View>
+
+              {/* Payment Rows */}
+              {paymentHistory.map((payment, idx) => (
+                <View key={`payment-${idx}`} style={styles.tr}>
+                  <Text style={[styles.td, { flex: 2 }]}>
+                    {payment.type === 'deposit' ? 'Deposit Payment' : 'Final Balance Payment'}
+                    {payment.transactionRef ? ` (Ref: ${payment.transactionRef})` : ''}
+                  </Text>
+                  <Text style={[styles.td, { width: 80, textAlign: 'right' }]}>{formatDateZA(payment.date)}</Text>
+                  <Text style={[styles.td, { width: 80, textAlign: 'right', color: BRAND.primary }]}>
+                    -{formatMoney(payment.amount)}
+                  </Text>
+                  <Text style={[styles.td, { width: 80, textAlign: 'right', color: '#16a34a' }]}>Paid</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.totalsWrap}>
+              <View style={styles.totalsBox}>
+                <View style={styles.totalsRow}>
+                  <Text style={styles.totalsKey}>Total Billed</Text>
+                  <Text style={styles.totalsVal}>{formatMoney(quote.total)}</Text>
+                </View>
+                <View style={styles.totalsRow}>
+                  <Text style={styles.totalsKey}>Total Paid</Text>
+                  <Text style={[styles.totalsVal, { color: BRAND.primary }]}>
+                    {formatMoney(paymentHistory.reduce((sum, p) => sum + p.amount, 0))}
+                  </Text>
+                </View>
+                <View style={[styles.totalsRow, { marginBottom: 0 }]}>
+                  <Text style={styles.totalsGrandKey}>Balance</Text>
+                  <Text style={[styles.totalsGrandVal, { color: '#16a34a' }]}>
+                    {formatMoney(quote.total - paymentHistory.reduce((sum, p) => sum + p.amount, 0))}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={{ marginTop: 20, alignItems: 'center' }}>
+              <View style={[styles.paymentBadge, { backgroundColor: '#dcfce7', borderColor: '#16a34a' }]}>
+                <Text style={[styles.paymentBadgeText, { color: '#16a34a' }]}>ACCOUNT PAID IN FULL</Text>
+              </View>
+            </View>
+
+            <View style={{ marginTop: 16 }}>
+              <Text style={styles.note}>
+                Thank you for your business. This statement confirms that all payments have been received
+                and your account is settled. Please retain this document for your records.
+              </Text>
+            </View>
+          </Page>
+        </Document>
+      );
+
+      const instance = pdf(StatementDocument);
+      try {
+        const output = await instance.toBuffer();
+        return await this.toNodeBuffer(output);
+      } catch {
+        const blob = await (instance as unknown as { toBlob: () => Promise<unknown> }).toBlob();
+        return await this.toNodeBuffer(blob);
+      }
+    } catch (error) {
+      console.error('Error generating Statement PDF:', error);
+      throw new Error('Failed to generate Statement PDF');
     }
   }
 

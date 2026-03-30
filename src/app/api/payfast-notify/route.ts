@@ -378,6 +378,119 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
+      // Handle balance payment
+      if (paymentType === 'balance') {
+        const { data: quoteRecord, error: quoteError } = await supabase
+          .from('quotes')
+          .select('*')
+          .eq('id', recordId)
+          .single();
+
+        if (quoteError || !quoteRecord) {
+          console.error('Failed to fetch quote record for balance payment:', quoteError);
+          return NextResponse.json({ error: 'Quote not found' }, { status: 404 });
+        }
+
+        const balancePaid = Number(quoteRecord.balance_paid || 0) + amountGross;
+        const totalPaid = Number(quoteRecord.deposit_paid || 0) + balancePaid;
+        const isFullyPaid = totalPaid >= Number(quoteRecord.total || 0);
+
+        const { error: updateError } = await supabase
+          .from('quotes')
+          .update({
+            balance_paid: balancePaid,
+            balance_paid_at: new Date().toISOString(),
+            status: isFullyPaid ? 'fully_paid' : quoteRecord.status,
+            fully_paid_at: isFullyPaid ? new Date().toISOString() : quoteRecord.fully_paid_at,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', recordId);
+
+        if (updateError) {
+          console.error('Failed to update quote for balance payment:', updateError);
+          return NextResponse.json({ error: 'Failed to update quote balance status' }, { status: 500 });
+        }
+
+        const botSailorService = new BotSailorService();
+        const whatsappUserId = data.custom_str4 || quoteRecord.customer_phone;
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app';
+        const quoteUrl = `${baseUrl}/quote/${quoteRecord.quote_number}?reference=${quoteRecord.quote_number}`;
+        const balanceSuccessUrl = `${baseUrl}/quote/${quoteRecord.quote_number}/balance-success`;
+
+        let statementPdfUrl: string | undefined;
+
+        try {
+          const { DatabaseService } = await import('@/services/databaseService');
+          const fullQuote = await DatabaseService.getQuote(quoteRecord.quote_number);
+
+          if (fullQuote && isFullyPaid) {
+            const pdfService = new PDFService();
+
+            // Create payment history
+            const paymentHistory = [
+              {
+                type: 'deposit' as const,
+                amount: Number(quoteRecord.deposit_paid || 0),
+                date: quoteRecord.deposit_paid_at || quoteRecord.created_at,
+                transactionRef: 'Deposit Payment'
+              },
+              {
+                type: 'balance' as const,
+                amount: amountGross,
+                date: new Date().toISOString(),
+                transactionRef: pfPaymentId || 'Balance Payment'
+              }
+            ];
+
+            // Generate statement PDF
+            try {
+              const statementBuffer = await pdfService.generateStatementPDF(fullQuote, paymentHistory);
+              const { pdfUrl, storagePath } = await pdfService.savePDF(statementBuffer, fullQuote.quoteNumber, false);
+              statementPdfUrl = pdfUrl;
+
+              // Store statement URL in quotes table
+              await supabase
+                .from('quotes')
+                .update({ statement_pdf_url: pdfUrl })
+                .eq('id', recordId);
+            } catch (statementError) {
+              console.error('Failed to generate or save statement PDF:', statementError);
+            }
+          }
+        } catch (loadError) {
+          console.error('Failed to load quote for statement generation:', loadError);
+        }
+
+        try {
+          if (whatsappUserId) {
+            const statementPdfLine = statementPdfUrl ? `\n📄 Statement of Account:\n${statementPdfUrl}\n` : '';
+
+            const message = `✅ *Balance Payment Received - OWD Glass*
+
+Thank you, we have received your final balance payment.
+
+📌 Quote: ${quoteRecord.quote_number}
+💰 Balance Paid: R${amountGross.toFixed(2)}
+🧾 Total Paid: R${totalPaid.toFixed(2)}
+✅ Account Status: FULLY PAID
+
+View your payment confirmation:
+${balanceSuccessUrl}${statementPdfLine}
+Our scheduling team will contact you shortly to confirm installation details.
+
+OWD Glass`;
+
+            await botSailorService.sendTextMessage(whatsappUserId, message);
+            console.log('Balance payment confirmation WhatsApp message sent successfully');
+          }
+        } catch (messageError) {
+          console.error('Failed to send balance payment confirmation WhatsApp message:', messageError);
+        }
+
+        console.log('Quote balance payment processed successfully:', referenceNumber);
+        return NextResponse.json({ success: true });
+      }
+
       // Fetch repair request details
       const { data: repairRequest, error: repairError } = await supabase
         .from('repair_requests')

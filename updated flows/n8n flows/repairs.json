@@ -1,0 +1,371 @@
+{
+  "name": "repairs",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "glass-repair-bot",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "5c50545d-b156-4fb3-a02f-756c1eb6fc10",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -448,
+        96
+      ],
+      "webhookId": "de1c51c0-35aa-42bf-abca-52b7b97b1631"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.user_input_data[0].answer }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "37980858-585e-4398-a227-c6aca7e9b3d6",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -48,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "text": "Analyze this image of broken glass for a glazier and return a JSON object with the following keys:\n- \"type\": Is it a door, window, or shopfront?\n- \"glass_type\": Analyze the break pattern. Are there dangerous large shards (Float/Standard) or a safe spiderweb/crumbly pattern (Toughened/Laminated)?\n- \"frame_finish\": What color is the aluminum frame? (e.g., Charcoal, White, Bronze, Silver)\n- \"hardware_damage\": Is the handle, hinge, or bead visibly broken? (Yes/No with brief detail)\n- \"safety_upgrade_required\": Boolean (true if break pattern is large shards/float glass, false otherwise).\n-'expert_advice': Provide 1-2 sentences of professional glazier advice based on the photo (e.g., \"The wooden frame is heavily weathered and will need new putty,\" \"Please keep pets away from the loose shards,\" or \"The frame is bent so it may require adjustment\").",
+        "inputType": "binary",
+        "options": {}
+      },
+      "id": "87913f7d-cd77-4d6a-8797-e2c3c2429485",
+      "name": "Gemini Vision Analysis",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        176,
+        -64
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fTA5h4sSgCbnGFHg",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const geminiText = $('Gemini Vision Analysis').first().json.content.parts[0].text;\nconst distanceMeters = $('Calculate Distance via Google Maps').first().json.rows[0].elements[0].distance.value; \nconst durationText = $('Calculate Distance via Google Maps').first().json.rows[0].elements[0].duration.text; \n\nconst baseCallOutFee = 350; \nconst costPerKm = 6.50;\nconst materialsFitting = 1850;\n\n// Parse Gemini Data\nconst cleanJson = String(geminiText).replace(/```json/gi, '').replace(/```/g, '').trim();\nconst parsedData = JSON.parse(cleanJson);\n\nconst distanceKm = (Number(distanceMeters) / 1000).toFixed(2);\nconst callOutFee = (baseCallOutFee + (parseFloat(distanceKm) * costPerKm)).toFixed(2);\nconst totalPrice = (parseFloat(callOutFee) + materialsFitting).toFixed(2);\n\nconst systemDescription = `${parsedData.frame_finish} ${parsedData.type}`;\n\nconst safetyNote = parsedData.safety_upgrade_required \n  ? '⚠️ Safety Note: The break pattern shows this was standard glass. By law (SANS 10400-N), we must replace this with 6.38mm Safety Glass.'\n  : '✅ Safety Note: The break pattern confirms this was safety glass. We will replace it with matching SANS-approved glass.';\n\nconst expertAdvice = parsedData.expert_advice || \"Our technician will assess the frame on-site to ensure a perfect fit.\";\n\nreturn [{\n  json: {\n    distance_km: distanceKm,\n    duration: durationText,\n    system_description: systemDescription,\n    safety_note: safetyNote,\n    expert_advice: expertAdvice,\n    call_out_fee: callOutFee,\n    materials_fitting: materialsFitting,\n    total_price: totalPrice,\n    \n    system_type: parsedData.type,\n    glass_type: parsedData.glass_type,\n    frame_finish: parsedData.frame_finish,\n    hardware_damage: parsedData.hardware_damage,\n    safety_upgrade_required: parsedData.safety_upgrade_required,\n    base_call_out_fee: baseCallOutFee,\n    cost_per_km: costPerKm,\n    calculated_call_out_fee: parseFloat(callOutFee),\n    \n    // Use consistent webhook node name\n    customer_phone: $('Webhook Trigger').first().json.body.chat_id,\n    customer_location: $('Webhook Trigger').first().json.body.user_input_data[1].answer || null,\n    \n  }\n}];"
+      },
+      "id": "0e401f64-ef89-43a3-860a-0d41fb52db8c",
+      "name": "Parse & Calculate Quote",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://botsailor.com/api/v1/whatsapp/send",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "apiToken",
+              "value": "17624|mrHKuEUJ3ugTwXrKNcPu3hmhj9wcxoY2YHTSbrE3048e937d"
+            },
+            {
+              "name": "phone_number_id",
+              "value": "=967736983089856"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{ $('Webhook Trigger').item.json.body.chat_id }}"
+            },
+            {
+              "name": "message",
+              "value": "=Thank you for sending the details. Our system has analyzed the photo of your damaged {{ $('Parse & Calculate Quote').item.json.system_description }}.\n\n*🛠️ Expert Assessment*\n{{ $('Parse & Calculate Quote').item.json.expert_advice }}\n\n{{ $('Parse & Calculate Quote').item.json.safety_note }}\n\n*📋 Estimated Quotation*\n• Materials & Installation: R{{ $('Parse & Calculate Quote').item.json.materials_fitting }}\n• Travel & Call-out {{ $('Parse & Calculate Quote').item.json.distance_km }}km @R{{ $('Parse & Calculate Quote').item.json.call_out_fee }}\n\n*Total Estimated Cost: R{{ $('Parse & Calculate Quote').item.json.total_price }}*\n\nPlease note: This is a rough estimate based on the photo. An official, final quote will be provided on-site by our expert staff._\n\nTo accept this estimate and book a technician, please pay the call-out fee using the secure link below:\n👉 {{ $json.checkout_url }}\n\nSecure payment powered by PayFast.\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1bbe3d8a-2087-4cc0-8bb5-9afe27bacdc6",
+      "name": "Send Response via BotSailor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        880,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-2",
+              "name": "materials_fitting",
+              "value": 1850,
+              "type": "number"
+            },
+            {
+              "id": "id-4",
+              "name": "botsailor_api_url",
+              "value": "<__PLACEHOLDER_VALUE__BotSailor Send Message API Endpoint__>",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "base_call_out_fee",
+              "value": 350,
+              "type": "number"
+            },
+            {
+              "id": "id-6",
+              "name": "cost_per_km",
+              "value": 6.5,
+              "type": "number"
+            },
+            {
+              "id": "id-7",
+              "name": "factory_latitude",
+              "value": "-25.824227434944238",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "factory_longitude",
+              "value": "28.14657",
+              "type": "string"
+            },
+            {
+              "id": "id-9",
+              "name": "google_maps_api_key",
+              "value": "AIzaSyBjd1KYtTaAzxzdw5ayGwwMu5Sex-gKQLI",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "11bc6049-620f-495f-a034-625da801f50c",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://maps.googleapis.com/maps/api/distancematrix/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "origins",
+              "value": "={{ $('Workflow Configuration').first().json.factory_latitude }},{{ $('Workflow Configuration').first().json.factory_longitude }}"
+            },
+            {
+              "name": "destinations",
+              "value": "={{ $('Webhook Trigger').item.json.body.user_input_data[1].answer }}"
+            },
+            {
+              "name": "key",
+              "value": "={{ $('Workflow Configuration').first().json.google_maps_api_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0d1a8107-e32b-4093-ad4c-5fa363c777a6",
+      "name": "Calculate Distance via Google Maps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://glassdemo.vercel.app/api/repair-request",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customer_phone\": \"{{ $json.customer_phone }}\",\n  \"customer_location\": \"{{ $json.customer_location }}\",\n  \"system_type\": \"{{ $json.system_type }}\",\n  \"glass_type\": \"{{ $json.glass_type }}\",\n  \"frame_finish\": \"{{ $json.frame_finish }}\",\n  \"hardware_damage\": \"{{ $json.hardware_damage }}\",\n  \"expert_advice\": \"{{ $json.expert_advice }}\",\n  \"safety_upgrade_required\": {{ $json.safety_upgrade_required }},\n  \"safety_note\": \"{{ $json.safety_note }}\",\n  \"distance_km\": {{ $json.distance_km }},\n  \"duration\": \"{{ $json.duration }}\",\n  \"base_call_out_fee\": {{ $json.base_call_out_fee }},\n  \"cost_per_km\": {{ $json.cost_per_km }},\n  \"calculated_call_out_fee\": {{ $json.calculated_call_out_fee }},\n  \"materials_fitting\": {{ $json.materials_fitting }},\n  \"total_price\": {{ $json.total_price }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        656,
+        96
+      ],
+      "id": "72c433ca-7f77-42ea-97dd-b68c3196c2fc",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {
+    "Webhook Trigger": [
+      {
+        "json": {
+          "headers": {
+            "host": "sifosman.app.n8n.cloud",
+            "content-length": "628",
+            "accept": "application/json",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "128.199.112.238",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9d614949cb643e44-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "128.199.112.238, 108.162.226.8",
+            "x-forwarded-host": "sifosman.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-40-88d9967ff-qt8kz",
+            "x-is-trusted": "yes",
+            "x-real-ip": "128.199.112.238"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "subscriber_id": "27658475289-324783",
+            "first_name": "OWD",
+            "chat_id": "27658475289",
+            "user_location_gps": "{\"latitude\":-25.8249332,\"longitude\":28.1467276}",
+            "user_input_data": [
+              {
+                "question": "Please send a photo of the damaged glass so we can try our best to assist you.",
+                "answer": "https://bot-data.s3.ap-southeast-1.wasabisys.com/upload/2026/3/livechat/248339-324783-2620595345007059.jpeg"
+              },
+              {
+                "question": "Great thanks. Also please confirm the location where this repair is required so I can calculate an estimate quote for you. ",
+                "answer": "123 jamestown avenue Crosby Johannesburg"
+              }
+            ],
+            "whatsapp_bot_username": "+27 66 307 7449"
+          },
+          "webhookUrl": "https://sifosman.app.n8n.cloud/webhook-test/glass-repair-bot",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Gemini Vision Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Vision Analysis": {
+      "main": [
+        [
+          {
+            "node": "Calculate Distance via Google Maps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Calculate Quote": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Distance via Google Maps": {
+      "main": [
+        [
+          {
+            "node": "Parse & Calculate Quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send Response via BotSailor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cd8fba10-0c94-470c-bf1c-9d4d21297157",
+  "meta": {
+    "instanceId": "33f53a3b4d83000e68c4b5697f5022c173f43db99cc93da8da17684fff98fab1"
+  },
+  "id": "zIABBWiQl1itt6cE",
+  "tags": []
+}
