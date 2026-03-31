@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OWD Glass-Engine - Agency Creative</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #fcfcfc;
+      --text: #000000;
+      --text-muted: #666666;
+      --accent: #000000;
+      --accent-light: #f4f4f5;
+      --border: #eaeaea;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      overflow-x: hidden;
+      font-weight: 300;
+    }
+
+    /* Progress Bar */
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: var(--accent);
+      width: 0%;
+      z-index: 1000;
+      transition: width 0.1s;
+    }
+    
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -0.04em;
+    }
+    
+    h1 {
+      font-size: 5rem;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+    }
+    
+    h2 {
+      font-size: 3.5rem;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+    
+    h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    .subtitle {
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-bottom: 3rem;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 0.875rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--accent-light);
+      border-radius: 2rem;
+    }
+
+    /* Layout */
+    .slide {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 6rem 10%;
+      position: relative;
+    }
+
+    .slide:nth-child(even) {
+      background: var(--bg-alt);
+    }
+
+    .slide-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .text-center {
+      text-align: center;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Bento Grid / Cards */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    
+    .bento-grid.cols-3 {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    
+    .bento-grid.cols-4 {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .card {
+      background: var(--bg);
+      border-radius: 24px;
+      padding: 2.5rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+      border: 1px solid var(--border);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.08);
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1.5rem;
+      color: var(--accent);
+    }
+
+    .card-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke-width: 2;
+    }
+
+    .stat-number {
+      font-size: 4rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 1rem 2.5rem;
+      border-radius: 100px;
+      font-weight: 600;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+      border: 2px solid var(--text);
+    }
+
+    .btn-primary:hover {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text);
+    }
+
+    /* Compare Section */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .compare-column {
+      background: var(--bg);
+      border-radius: 24px;
+      padding: 3rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+      border: 1px solid var(--border);
+    }
+
+    .compare-column h3 {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+    }
+
+    .compare-list {
+      list-style: none;
+    }
+
+    .compare-list li {
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 1.125rem;
+      font-weight: 500;
+    }
+
+    .compare-list li:last-child {
+      border-bottom: none;
+    }
+
+    .check {
+      color: #000;
+      font-weight: 900;
+    }
+
+    .cross {
+      color: #ccc;
+      font-weight: 900;
+    }
+
+    /* Steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+    
+    .step-card {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      background: var(--bg);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+      border: 1px solid var(--border);
+    }
+    
+    .step-number {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--border);
+      line-height: 1;
+    }
+
+    .step-content h4 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .step-content p {
+      margin-bottom: 0;
+      font-size: 1.125rem;
+    }
+
+    /* Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .delay-1 { transition-delay: 0.1s; }
+    .delay-2 { transition-delay: 0.2s; }
+    .delay-3 { transition-delay: 0.3s; }
+    .delay-4 { transition-delay: 0.4s; }
+
+    /* Tags */
+    .tag {
+      background: var(--accent-light);
+      color: var(--text);
+      padding: 0.5rem 1rem;
+      border-radius: 100px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: inline-block;
+      margin-right: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 3.5rem; }
+      h2 { font-size: 2.5rem; }
+      .slide { padding: 4rem 5%; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .step-card { flex-direction: column; text-align: center; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Progress Bar -->
+  <div id="progress-bar"></div>
+
+  <!-- SLIDE 1: Title -->
+  <section class="slide">
+    <div class="slide-content text-center fade-in">
+      <div class="section-label">AI-Powered Automation</div>
+      <h1>OWD Glass-Engine</h1>
+      <p class="subtitle">
+        Transforming Glass Quotes with AI-Powered WhatsApp Automation. The intelligent system that converts handwritten sketches and photos into professional SANS-compliant PDF quotes—instantly via WhatsApp.
+      </p>
+      <div class="btn-group" style="justify-content: center;">
+        <span class="btn btn-primary">Watch Demo</span>
+        <span class="btn btn-secondary">Learn More</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2: The Problem -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="fade-in">
+        <h2>The "Free Quote" Crisis</h2>
+        <p class="subtitle">With petrol exceeding R25/L, every "free quote" is actually costing you money.</p>
+      </div>
+      
+      <div class="bento-grid cols-3 fade-in delay-1">
+        <div class="card">
+          <div class="stat-number">R500</div>
+          <div class="stat-label">Cost Per Quote</div>
+          <p style="margin-top: 1rem; font-size: 1rem;">Fuel + labor for leads that don't close.</p>
+        </div>
+        <div class="card">
+          <div class="stat-number">3h</div>
+          <div class="stat-label">Time Per Quote</div>
+          <p style="margin-top: 1rem; font-size: 1rem;">Manual processing of measurements.</p>
+        </div>
+        <div class="card">
+          <div class="stat-number">10pm</div>
+          <div class="stat-label">Still Quoting</div>
+          <p style="margin-top: 1rem; font-size: 1rem;">Owners working late hours.</p>
+        </div>
+      </div>
+      
+      <div class="bento-grid cols-3 fade-in delay-2">
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M2 12h20M12 2l4 4M12 2l-4 4M12 22l4-4M12 22l-4-4M22 12l-4-4M22 12l-4 4M2 12l4-4M2 12l4 4"/></svg>
+          </div>
+          <h3>Rising Costs</h3>
+          <p style="font-size: 1rem;">Every bakkie trip costs R200+ in fuel alone, plus staff time.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>Lost Deals</h3>
+          <p style="font-size: 1rem;">Slow response times mean customers go to competitors.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <h3>Manual Errors</h3>
+          <p style="font-size: 1rem;">Handwritten sketches lead to miscommunication and mistakes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 3: The Solution -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="fade-in">
+        <h2>The OWD Glass-Engine</h2>
+        <p class="subtitle">A 100% WhatsApp-native AI Auto-Estimator that works while you sleep.</p>
+      </div>
+      
+      <div class="bento-grid fade-in delay-1">
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
+          <h3>Zero Friction</h3>
+          <p>No apps. No forms. Customers use WhatsApp—the app they already know.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <h3>AI-Powered OCR</h3>
+          <p>Reads handwritten sketches better than humans. Extracts dimensions instantly.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3>Instant PDF Quotes</h3>
+          <p>Professional SANS-compliant quotes delivered in under 5 minutes.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <h3>Automatic Deposits</h3>
+          <p>Integrated payment collection before your bakkie leaves the shop.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 4: Three Modules -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="text-center fade-in">
+        <h2>Three Intelligent Modules</h2>
+        <p class="subtitle">An AI Staff Member handling three distinct functions.</p>
+      </div>
+      
+      <div class="bento-grid cols-3 fade-in delay-1">
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          </div>
+          <h3>The Estimator</h3>
+          <p>High-volume glass window and door quotes.</p>
+          <div style="margin-top: auto;">
+            <span class="tag">Input: Sketches</span>
+            <span class="tag">Output: 5m PDF Quote</span>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+          </div>
+          <h3>The Closer</h3>
+          <p>High-value shower enclosure specialist.</p>
+          <div style="margin-top: auto;">
+            <span class="tag">Input: Photos</span>
+            <span class="tag">Output: Survey & Deposit</span>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <h3>The Filter</h3>
+          <p>Window repair triage specialist.</p>
+          <div style="margin-top: auto;">
+            <span class="tag">Input: Damage Pics</span>
+            <span class="tag">Output: Call-out Fee</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5: How It Works -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="fade-in">
+        <h2>60 Seconds from Sketch to Quote</h2>
+        <p class="subtitle">All before your bakkie leaves the shop.</p>
+      </div>
+      
+      <div class="steps fade-in delay-1">
+        <div class="step-card">
+          <div class="step-number">01</div>
+          <div class="step-content">
+            <h4>Customer Sends Photo</h4>
+            <p>Sketch or bathroom photo via WhatsApp.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">02</div>
+          <div class="step-content">
+            <h4>AI Extracts Data</h4>
+            <p>Dimensions, glass types, quantities identified instantly.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">03</div>
+          <div class="step-content">
+            <h4>Confirmation Sent</h4>
+            <p>Customer taps "YES" (liability shifts to them).</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">04</div>
+          <div class="step-content">
+            <h4>PDF Generated</h4>
+            <p>Professional branded SANS-compliant quote delivered.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number">05</div>
+          <div class="step-content">
+            <h4>Payment Collected</h4>
+            <p>Deposit or survey fee collected automatically via secure link.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 6: Tech Stack -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="fade-in">
+        <h2>The Technology Stack</h2>
+        <p class="subtitle">Enterprise-grade architecture powering the automation.</p>
+      </div>
+      
+      <div class="bento-grid cols-4 fade-in delay-1">
+        <div class="card">
+          <h3>WhatsApp API</h3>
+          <p style="font-size:1rem; margin-top:0.5rem;">Official Business API Integration.</p>
+        </div>
+        <div class="card">
+          <h3>Google Gemini</h3>
+          <p style="font-size:1rem; margin-top:0.5rem;">Advanced Vision OCR & Analysis.</p>
+        </div>
+        <div class="card">
+          <h3>n8n</h3>
+          <p style="font-size:1rem; margin-top:0.5rem;">Robust Workflow Automation.</p>
+        </div>
+        <div class="card">
+          <h3>Supabase</h3>
+          <p style="font-size:1rem; margin-top:0.5rem;">Secure PostgreSQL Database.</p>
+        </div>
+        <div class="card">
+          <h3>PayFast / Yoco</h3>
+          <p style="font-size:1rem; margin-top:0.5rem;">Seamless Payment Collection.</p>
+        </div>
+        <div class="card">
+          <h3>Google Maps</h3>
+          <p style="font-size:1rem; margin-top:0.5rem;">Distance & Travel Cost Calc.</p>
+        </div>
+        <div class="card">
+          <h3>Vercel</h3>
+          <p style="font-size:1rem; margin-top:0.5rem;">High-Performance Dashboard.</p>
+        </div>
+        <div class="card">
+          <h3>PDF Engine</h3>
+          <p style="font-size:1rem; margin-top:0.5rem;">Dynamic Quote Generation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 7: Impact -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="fade-in">
+        <h2>From Hours to Minutes</h2>
+        <p class="subtitle">The transformation your business will experience.</p>
+      </div>
+      
+      <div class="compare-grid fade-in delay-1">
+        <div class="compare-column">
+          <h3>Before</h3>
+          <ul class="compare-list">
+            <li><span class="cross">✗</span> 2-3 hours per quote</li>
+            <li><span class="cross">✗</span> Manual safety checks</li>
+            <li><span class="cross">✗</span> Quote delays (next day)</li>
+            <li><span class="cross">✗</span> After-hours stress</li>
+            <li><span class="cross">✗</span> Lost deals to competitors</li>
+          </ul>
+        </div>
+        <div class="compare-column" style="border-color: #000; box-shadow: 0 30px 60px rgba(0,0,0,0.08);">
+          <h3>After</h3>
+          <ul class="compare-list">
+            <li><span class="check">✓</span> &lt; 5 minutes per quote</li>
+            <li><span class="check">✓</span> AI-automated SANS validation</li>
+            <li><span class="check">✓</span> Instant PDF delivery</li>
+            <li><span class="check">✓</span> 24/7 availability</li>
+            <li><span class="check">✓</span> Fastest response wins</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8: Target Market -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="fade-in">
+        <h2>Who We Serve</h2>
+        <p class="subtitle">Target market segments across the glass industry.</p>
+      </div>
+      
+      <div class="bento-grid cols-3 fade-in delay-1">
+        <div class="card">
+          <h3>Elite Shower Specialists</h3>
+          <p>Technical expertise for high-value shower enclosure quotes with laser-survey bookings and premium positioning.</p>
+          <div style="margin-top: auto;">
+            <span class="tag">The Closer Module</span>
+            <span class="tag">R550 Survey Deposits</span>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3>Hybrid Fabricators</h3>
+          <p>High-volume handling of messy handwritten notes and fast turnaround on window and door quotes.</p>
+          <div style="margin-top: auto;">
+            <span class="tag">The Estimator Module</span>
+            <span class="tag">OCR Handwriting</span>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3>Enterprise Suppliers</h3>
+          <p>API-level integrations, multi-branch rollouts, and massive volume triage capabilities for large operations.</p>
+          <div style="margin-top: auto;">
+            <span class="tag">Full Suite</span>
+            <span class="tag">Multi-Branch</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 9: CTA -->
+  <section class="slide">
+    <div class="slide-content text-center fade-in">
+      <h2>Transforming the Industry</h2>
+      <p class="subtitle" style="margin-bottom: 4rem;">
+        Eliminate wasteful manual quoting processes, reduce operational costs, and scale your business through intelligent automation—one WhatsApp message at a time.
+      </p>
+      
+      <div class="card" style="text-align: left;">
+        <h2>Ready to Automate?</h2>
+        <p>Schedule your live demonstration today and see your own handwritten sketches converted to professional PDF quotes in under 60 seconds.</p>
+        <div class="btn-group">
+          <span class="btn btn-primary">Schedule Demo</span>
+          <span class="btn btn-secondary">Contact Us</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Progress Bar
+    window.addEventListener('scroll', () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      document.getElementById('progress-bar').style.width = scrolled + '%';
+    });
+
+    // Fade-in Intersection Observer
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.15
+    };
+
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>

@@ -85,42 +85,6 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: BRAND.line, marginVertical: 10 },
   paymentBadge: { borderWidth: 1, borderColor: BRAND.line, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: BRAND.bg, alignSelf: 'flex-start' },
   paymentBadgeText: { fontSize: 9.5, color: BRAND.primaryDark, fontWeight: 700 },
-  // Payment button styles
-  paymentButton: {
-    backgroundColor: BRAND.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-  },
-  paymentButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 700,
-  },
-  paymentSection: {
-    marginTop: 20,
-    padding: 16,
-    backgroundColor: BRAND.bg,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: BRAND.line,
-    alignItems: 'center',
-  },
-  paymentSectionTitle: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: BRAND.primaryDark,
-    marginBottom: 8,
-  },
-  paymentSectionText: {
-    fontSize: 9.5,
-    color: BRAND.muted,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
 });
 
 interface QuoteDocumentProps {
@@ -542,22 +506,6 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({ quote }) => {
             Lead time and installation dates are confirmed after final on-site measure. All glazing will be supplied and installed in accordance with SANS 10400-N where applicable.
           </Text>
         </View>
-
-        {/* Payment Section */}
-        <View style={styles.paymentSection}>
-          <Text style={styles.paymentSectionTitle}>Accept Your Quote</Text>
-          <Text style={styles.paymentSectionText}>
-            Secure your order by paying the 50% deposit of {formatMoney(quote.total * 0.5)}.
-            Click the button below to proceed with payment.
-          </Text>
-          <Link
-            src={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app'}/quote/${quote.quoteNumber}`}
-          >
-            <View style={styles.paymentButton}>
-              <Text style={styles.paymentButtonText}>Pay Deposit Now</Text>
-            </View>
-          </Link>
-        </View>
       </Page>
 
       {schedulePages.map((pageRows, pageIdx) => (
@@ -868,22 +816,6 @@ export class PDFService {
               <Text style={styles.note}>
                 This invoice reflects the deposit received for the above quotation. The remaining balance is due strictly upon completion of installation unless otherwise agreed in writing.
               </Text>
-            </View>
-
-            {/* Balance Payment Section */}
-            <View style={styles.paymentSection}>
-              <Text style={styles.paymentSectionTitle}>Balance Payment Required</Text>
-              <Text style={styles.paymentSectionText}>
-                Remaining balance of {formatMoney(remainingBalance)} is due upon completion of installation.
-                Click below to pay now or pay on-site during installation.
-              </Text>
-              <Link
-                src={`${process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app'}/quote/${quote.quoteNumber}/pay-balance`}
-              >
-                <View style={styles.paymentButton}>
-                  <Text style={styles.paymentButtonText}>Pay Balance Now</Text>
-                </View>
-              </Link>
             </View>
           </Page>
         </Document>
