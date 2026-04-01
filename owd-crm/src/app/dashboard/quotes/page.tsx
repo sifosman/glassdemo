@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/utils/supabase'
 import { Sidebar } from '@/components/sidebar'
 
@@ -236,9 +237,9 @@ export default async function QuotesPage() {
                                 <a href={quote.pdf_url} target="_blank" rel="noopener noreferrer" className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors" title="View PDF">
                                   <span className="material-symbols-outlined text-sm text-primary">visibility</span>
                                 </a>
-                                <button className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors" title="Edit">
+                                <Link href={`/dashboard/quotes/${quote.id}/edit`} className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors" title="Edit">
                                   <span className="material-symbols-outlined text-sm text-secondary">edit</span>
-                                </button>
+                                </Link>
                                 <a href={quote.pdf_url} download={`Quote-${quote.quote_number}.pdf`} target="_blank" rel="noopener noreferrer" className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors" title="Download PDF">
                                   <span className="material-symbols-outlined text-sm text-on-surface-variant">download</span>
                                 </a>
@@ -248,9 +249,9 @@ export default async function QuotesPage() {
                                 <button className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors opacity-50 cursor-not-allowed" title="No PDF available" disabled>
                                   <span className="material-symbols-outlined text-sm text-primary">visibility_off</span>
                                 </button>
-                                <button className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors" title="Edit">
+                                <Link href={`/dashboard/quotes/${quote.id}/edit`} className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors" title="Edit">
                                   <span className="material-symbols-outlined text-sm text-secondary">edit</span>
-                                </button>
+                                </Link>
                                 <button className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors opacity-50 cursor-not-allowed" title="No PDF available" disabled>
                                   <span className="material-symbols-outlined text-sm text-on-surface-variant">download</span>
                                 </button>
