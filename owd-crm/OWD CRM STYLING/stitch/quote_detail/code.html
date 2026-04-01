@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quote Detail - OWD CRM</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#2d486d",
+                        "outline-variant": "#c4c6cf",
+                        "on-surface-variant": "#43474e",
+                        "primary-container": "#1e3a5f",
+                        "secondary-container": "#86f2e4",
+                        "tertiary-fixed-dim": "#ffb95f",
+                        "surface": "#f7f9fb",
+                        "on-surface": "#191c1e",
+                        "secondary": "#006a61",
+                        "on-secondary-fixed-variant": "#005049",
+                        "tertiary-fixed": "#ffddb8",
+                        "surface-container-highest": "#e0e3e5",
+                        "primary-fixed": "#d5e3ff",
+                        "surface-variant": "#e0e3e5",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#6bd8cb",
+                        "on-primary": "#ffffff",
+                        "surface-container-high": "#e6e8ea",
+                        "inverse-primary": "#adc8f5",
+                        "primary-fixed-dim": "#adc8f5",
+                        "on-primary-container": "#8aa4cf",
+                        "on-primary-fixed": "#001c3b",
+                        "on-secondary-fixed": "#00201d",
+                        "background": "#f7f9fb",
+                        "inverse-surface": "#2d3133",
+                        "tertiary": "#361f00",
+                        "on-background": "#191c1e",
+                        "surface-tint": "#455f87",
+                        "surface-dim": "#d8dadc",
+                        "tertiary-container": "#533200",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#653e00",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#89f5e7",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary-container": "#006f66",
+                        "outline": "#74777f",
+                        "on-tertiary-container": "#e39100",
+                        "surface-container": "#eceef0",
+                        "primary": "#022448",
+                        "on-tertiary-fixed": "#2a1700",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-surface flex min-h-screen">
+<!-- SideNavBar (The Monolith) -->
+<aside class="w-[240px] h-screen border-r-0 bg-slate-100 dark:bg-slate-900 flex flex-col py-6 sticky top-0">
+<div class="px-6 mb-8">
+<h1 class="text-xl font-bold tracking-tight text-blue-950 dark:text-blue-100">OWD CRM</h1>
+<p class="text-xs text-slate-500 font-medium uppercase tracking-widest mt-1">Admin Account</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:text-blue-900 dark:hover:text-blue-200 transition-colors mx-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-sans text-sm font-medium tracking-tight">Dashboard</span>
+</a>
+<a class="flex items-center px-6 py-2.5 bg-teal-100/50 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 rounded-full mx-3 transition-transform duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined mr-3">receipt_long</span>
+<span class="font-sans text-sm font-medium tracking-tight">Quotes &amp; Invoices</span>
+</a>
+<a class="flex items-center px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:text-blue-900 dark:hover:text-blue-200 transition-colors mx-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined mr-3">group</span>
+<span class="font-sans text-sm font-medium tracking-tight">Customers</span>
+</a>
+<a class="flex items-center px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:text-blue-900 dark:hover:text-blue-200 transition-colors mx-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined mr-3">grid_view</span>
+<span class="font-sans text-sm font-medium tracking-tight">Products &amp; Pricing</span>
+</a>
+<a class="flex items-center px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:text-blue-900 dark:hover:text-blue-200 transition-colors mx-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined mr-3">analytics</span>
+<span class="font-sans text-sm font-medium tracking-tight">Reports</span>
+</a>
+<a class="flex items-center px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:text-blue-900 dark:hover:text-blue-200 transition-colors mx-3 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-sans text-sm font-medium tracking-tight">Settings</span>
+</a>
+</nav>
+<div class="px-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+<a class="flex items-center px-6 py-2.5 text-slate-600 dark:text-slate-400 hover:text-blue-900 dark:hover:text-blue-200 transition-colors rounded-full hover:bg-slate-200 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined mr-3">logout</span>
+<span class="font-sans text-sm font-medium tracking-tight">Logout</span>
+</a>
+</div>
+</aside>
+<div class="flex-1 flex flex-col min-w-0 bg-surface">
+<!-- TopNavBar (StickyHeader) -->
+<header class="h-16 w-full sticky top-0 z-40 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md flex items-center justify-between px-6 shadow-sm dark:shadow-none">
+<div class="flex items-center gap-8 flex-1">
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-secondary/20 placeholder:text-slate-500" placeholder="Search quotes..." type="text"/>
+</div>
+<nav class="hidden md:flex gap-6">
+<a class="text-sm font-semibold text-blue-900 dark:text-blue-400 border-b-2 border-blue-900 pb-1" href="#">Dashboard</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-500 hover:text-teal-600 transition-colors"><span class="material-symbols-outlined">notifications</span></button>
+<button class="text-slate-500 hover:text-teal-600 transition-colors"><span class="material-symbols-outlined">help</span></button>
+<button class="text-slate-500 hover:text-teal-600 transition-colors"><span class="material-symbols-outlined">dark_mode</span></button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-slate-200">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Close-up portrait of a professional male architect in a bright modern office setting, soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfQXNamwP9KKfFo6V79TUPajaGSSERSpKdrhQPFT1MWDx-2yJJ6YUjRPKLMRkyvgi4lfxKTMUPjJ7Ox5cOosS_bl5X9H9W8f1Aj-43nIq3q51c2Snt1xn9z4h67lTI_o1D00Z2NYp_yedFjxf07G2uQPe0RAtvb13fd-dI7noJ8bIfTyOpv9NntVU5VcKJ1mTpN_vwKgnUMiZegdolISD2GyRjohEsCy121hR6q3fJtOjW4-dwbQ135BGvbtD-AOBQ4hhkalUeRdg7"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="p-8 max-w-7xl mx-auto w-full">
+<!-- Breadcrumbs -->
+<div class="flex items-center gap-2 text-xs font-medium text-on-surface-variant mb-6">
+<span>Quotes</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-primary font-bold tracking-tight">QT-2024-0892</span>
+</div>
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-10">
+<div>
+<h2 class="text-4xl font-extrabold tracking-tight text-primary mb-2">Quote Details</h2>
+<p class="text-on-surface-variant max-w-md leading-relaxed">Detailed breakdown of the architectural glass installation project for the Waterfront Commercial Center.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-5 py-2.5 bg-surface-container-high text-primary font-semibold rounded-lg hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">download</span>
+                        Download PDF
+                    </button>
+<button class="px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-on-primary font-semibold rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+                        Approve Quote
+                    </button>
+</div>
+</div>
+<!-- Dashboard Layout (Two Columns) -->
+<div class="grid grid-cols-12 gap-8 items-start">
+<!-- Left Column: Customer & Quote Info -->
+<div class="col-span-12 lg:col-span-4 space-y-8">
+<!-- Customer Card -->
+<section class="bg-surface-container-lowest rounded-lg p-6">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-xs font-black uppercase tracking-widest text-slate-500">Customer Details</h3>
+<button class="text-secondary hover:underline text-xs font-bold">Edit</button>
+</div>
+<div class="flex items-start gap-4 mb-6">
+<div class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">corporate_fare</span>
+</div>
+<div>
+<h4 class="font-bold text-lg text-primary">Skyline Developers Ltd.</h4>
+<p class="text-sm text-on-surface-variant">Commercial Property Management</p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-sm">person</span>
+<span class="text-sm font-medium">Marcus Sterling</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-sm">mail</span>
+<span class="text-sm font-medium">m.sterling@skylinedev.com</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-sm">location_on</span>
+<span class="text-sm font-medium leading-tight">422 Waterfront Drive, Suite 800<br/>Chicago, IL 60601</span>
+</div>
+</div>
+</section>
+<!-- Quote Metadata Card -->
+<section class="bg-surface-container-low rounded-lg p-6 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-black uppercase tracking-tighter rounded-full">Active Quote</span>
+</div>
+<h3 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-6">Quote Metadata</h3>
+<div class="space-y-6">
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Quote Number</p>
+<p class="font-mono text-xl font-bold text-primary">#QT-2024-0892</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Issue Date</p>
+<p class="font-mono text-sm font-medium">2024-05-14</p>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Expiry Date</p>
+<p class="font-mono text-sm font-medium text-error">2024-06-14</p>
+</div>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Assigned Sales Rep</p>
+<div class="flex items-center gap-2 mt-1">
+<div class="w-6 h-6 rounded-full bg-slate-300 overflow-hidden">
+<img alt="Sales Rep" data-alt="portrait of a professional young woman with glasses in a modern workplace setting, friendly and approachable" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClGR0QUPlhtazdOL5-MTl-lfS0LDHtIp7GFAihI17v8Oi5_SzeB_4n5ahitghP4XgjhychppJeFsqzal8UqvK6v008nYrnaw9jQpyhJfcjlphUnHZTXxcjp3ZW-OjH21buga8pG8w1MaNxXOSZ3Yo-NQReUCxqAcGHo5-Ejt1QhjMy2l0_aptNqbJxG_Ti2h_nv0B6PJvmz5mwHy8p9Fqkq4eeuVZYLh6CnmgwqMguMn5s0NT5xj2sJqwpo6HMLROCRkxSIHZg0sAT"/>
+</div>
+<span class="text-sm font-medium">Sarah Jenkins</span>
+</div>
+</div>
+</div>
+</section>
+<button class="w-full py-4 bg-tertiary-fixed text-on-tertiary-fixed font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">swap_horiz</span>
+                        Convert to Invoice
+                    </button>
+</div>
+<!-- Right Column: Line Items & Totals -->
+<div class="col-span-12 lg:col-span-8">
+<div class="bg-surface-container-lowest rounded-lg overflow-hidden">
+<div class="p-6 border-b border-surface-container">
+<h3 class="text-lg font-bold text-primary">Line Items</h3>
+</div>
+<!-- Data Dense Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Item Description</th>
+<th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Quantity</th>
+<th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Unit Price</th>
+<th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Total</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low">
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5">
+<p class="font-bold text-primary">Tempered Safety Glass - 12mm</p>
+<p class="text-xs text-on-surface-variant">Custom cut for lobby facade, polished edges.</p>
+</td>
+<td class="px-6 py-5 text-right font-mono text-sm">24.00</td>
+<td class="px-6 py-5 text-right font-mono text-sm">$450.00</td>
+<td class="px-6 py-5 text-right font-mono text-sm font-bold">$10,800.00</td>
+</tr>
+<tr class="bg-surface-container-low/10 hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5">
+<p class="font-bold text-primary">Aluminum Framing System - Black</p>
+<p class="text-xs text-on-surface-variant">Anodized finish, architectural grade.</p>
+</td>
+<td class="px-6 py-5 text-right font-mono text-sm">120.00</td>
+<td class="px-6 py-5 text-right font-mono text-sm">$65.00</td>
+<td class="px-6 py-5 text-right font-mono text-sm font-bold">$7,800.00</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5">
+<p class="font-bold text-primary">On-site Installation &amp; Fitting</p>
+<p class="text-xs text-on-surface-variant">Labor cost for 4 technicians over 5 days.</p>
+</td>
+<td class="px-6 py-5 text-right font-mono text-sm">1.00</td>
+<td class="px-6 py-5 text-right font-mono text-sm">$4,200.00</td>
+<td class="px-6 py-5 text-right font-mono text-sm font-bold">$4,200.00</td>
+</tr>
+<tr class="bg-surface-container-low/10 hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5">
+<p class="font-bold text-primary">Structural Sealant &amp; Hardware</p>
+<p class="text-xs text-on-surface-variant">Industrial grade weatherproofing kit.</p>
+</td>
+<td class="px-6 py-5 text-right font-mono text-sm">10.00</td>
+<td class="px-6 py-5 text-right font-mono text-sm">$125.00</td>
+<td class="px-6 py-5 text-right font-mono text-sm font-bold">$1,250.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Totals Section -->
+<div class="p-8 flex justify-end">
+<div class="w-full max-w-xs space-y-3">
+<div class="flex justify-between items-center text-on-surface-variant">
+<span class="text-sm font-medium">Subtotal</span>
+<span class="font-mono text-sm">$24,050.00</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span class="text-sm font-medium">Tax (8.5%)</span>
+<span class="font-mono text-sm">$2,044.25</span>
+</div>
+<div class="pt-4 border-t border-surface-container-high flex justify-between items-center">
+<span class="text-lg font-extrabold text-primary">Grand Total</span>
+<span class="font-mono text-2xl font-black text-primary">$26,094.25</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Internal Notes (Asymmetric Placement) -->
+<div class="mt-8 grid grid-cols-2 gap-8">
+<div class="bg-white p-6 rounded-lg border-l-4 border-secondary">
+<h4 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">Project Scope Notes</h4>
+<p class="text-sm leading-relaxed text-on-surface-variant italic">
+                                "The client requested a faster turnaround for the lobby facade. Procurement of 12mm tempered glass needs to be expedited by Friday."
+                            </p>
+</div>
+<div class="flex flex-col justify-center">
+<div class="flex items-center gap-4 p-4 rounded-lg bg-primary/5">
+<span class="material-symbols-outlined text-primary text-3xl">verified</span>
+<div>
+<p class="text-sm font-bold text-primary">Technical Review Complete</p>
+<p class="text-xs text-on-surface-variant">Verified by Structural Eng on 2024-05-12</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
