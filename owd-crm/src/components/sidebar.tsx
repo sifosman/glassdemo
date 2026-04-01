@@ -3,21 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTenant } from '@/providers/tenant-provider'
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Users, 
-  Package, 
-  Settings, 
-  Building2, 
-  UserCircle,
-  LogOut,
-  ChevronDown,
-  BarChart3,
-  Store
-} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getRoleBadgeColor, getRoleLabel } from '@/lib/rbac'
+import { getRoleLabel } from '@/lib/rbac'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,25 +17,25 @@ import { useRouter } from 'next/navigation'
 interface NavItem {
   label: string
   href: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: string
   roles: string[]
 }
 
 const navigation: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'distributor', 'business_admin', 'business_user'] },
-  { label: 'Quotes', href: '/dashboard/quotes', icon: FileText, roles: ['super_admin', 'distributor', 'business_admin', 'business_user'] },
-  { label: 'Invoices', href: '/dashboard/invoices', icon: FileText, roles: ['super_admin', 'distributor', 'business_admin', 'business_user'] },
-  { label: 'Customers', href: '/dashboard/customers', icon: Users, roles: ['super_admin', 'distributor', 'business_admin', 'business_user'] },
-  { label: 'Products', href: '/dashboard/products', icon: Package, roles: ['super_admin', 'distributor', 'business_admin'] },
-  { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, roles: ['super_admin', 'distributor'] },
-  { label: 'Distributors', href: '/admin/distributors', icon: Building2, roles: ['super_admin'] },
-  { label: 'Businesses', href: '/admin/businesses', icon: Store, roles: ['super_admin', 'distributor'] },
-  { label: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['super_admin', 'distributor', 'business_admin'] },
+  { label: 'Dashboard', href: '/dashboard', icon: 'dashboard', roles: ['super_admin', 'distributor', 'business_admin', 'business_user'] },
+  { label: 'Quotes', href: '/dashboard/quotes', icon: 'description', roles: ['super_admin', 'distributor', 'business_admin', 'business_user'] },
+  { label: 'Invoices', href: '/dashboard/invoices', icon: 'receipt_long', roles: ['super_admin', 'distributor', 'business_admin', 'business_user'] },
+  { label: 'Customers', href: '/dashboard/customers', icon: 'group', roles: ['super_admin', 'distributor', 'business_admin', 'business_user'] },
+  { label: 'Products', href: '/dashboard/products', icon: 'inventory_2', roles: ['super_admin', 'distributor', 'business_admin'] },
+  { label: 'Reports', href: '/dashboard/analytics', icon: 'analytics', roles: ['super_admin', 'distributor'] },
+  { label: 'Distributors', href: '/admin/distributors', icon: 'corporate_fare', roles: ['super_admin'] },
+  { label: 'Businesses', href: '/admin/businesses', icon: 'store', roles: ['super_admin', 'distributor'] },
+  { label: 'Settings', href: '/dashboard/settings', icon: 'settings', roles: ['super_admin', 'distributor', 'business_admin'] },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { user, role, currentBusiness, availableBusinesses, setCurrentBusiness, isLoading } = useTenant()
+  const { role, currentBusiness, availableBusinesses, setCurrentBusiness, isLoading } = useTenant()
   const router = useRouter()
   const supabase = createClient()
 
@@ -62,13 +49,13 @@ export function Sidebar() {
 
   if (isLoading) {
     return (
-      <div className="w-64 bg-slate-900 text-white h-screen flex flex-col">
-        <div className="p-6">
-          <div className="h-8 bg-slate-700 rounded animate-pulse"></div>
+      <div className="w-[240px] bg-slate-100 dark:bg-slate-900 h-screen flex flex-col py-6">
+        <div className="px-6 mb-8">
+          <div className="h-8 bg-slate-300 dark:bg-slate-700 rounded animate-pulse"></div>
         </div>
-        <div className="flex-1 px-4 space-y-2">
+        <div className="flex-1 px-3 space-y-1">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-10 bg-slate-700 rounded animate-pulse"></div>
+            <div key={i} className="h-10 bg-slate-300 dark:bg-slate-700 rounded-full animate-pulse mx-3"></div>
           ))}
         </div>
       </div>
@@ -76,28 +63,23 @@ export function Sidebar() {
   }
 
   return (
-    <div className="w-64 bg-slate-900 text-white h-screen flex flex-col">
+    <aside className="hidden md:flex w-[240px] h-screen bg-slate-100 dark:bg-slate-900 flex-col py-6">
       {/* Logo */}
-      <div className="p-6 border-b border-slate-800">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
-            <Store className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-bold text-lg">OWD CRM</span>
-        </Link>
-        {currentBusiness && (
-          <p className="text-xs text-slate-400 mt-1 truncate">{currentBusiness.name}</p>
-        )}
+      <div className="px-6 mb-8">
+        <h1 className="text-xl font-bold tracking-tight text-blue-950 dark:text-blue-100">OWD CRM</h1>
+        <p className="text-xs text-slate-500 font-sans mt-1">
+          {role ? getRoleLabel(role) : 'Loading...'}
+        </p>
       </div>
 
       {/* Business Switcher (for multi-business users) */}
       {availableBusinesses.length > 1 && (
-        <div className="px-4 py-3 border-b border-slate-800">
+        <div className="px-6 mb-4">
           <DropdownMenu>
             <DropdownMenuTrigger className="w-full">
-              <div className="flex items-center justify-between w-full px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-md cursor-pointer">
-                <span className="truncate">{currentBusiness?.name || 'Select Business'}</span>
-                <ChevronDown className="w-4 h-4 ml-2" />
+              <div className="flex items-center justify-between w-full px-3 py-2 bg-surface-container-low hover:bg-surface-container-high text-on-surface rounded-lg cursor-pointer transition-colors">
+                <span className="truncate text-sm font-medium">{currentBusiness?.name || 'Select Business'}</span>
+                <span className="material-symbols-outlined text-sm">expand_more</span>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
@@ -106,7 +88,7 @@ export function Sidebar() {
                   key={business.id}
                   onClick={() => setCurrentBusiness(business)}
                   className={cn(
-                    currentBusiness?.id === business.id && 'bg-slate-100'
+                    currentBusiness?.id === business.id && 'bg-secondary-container/20'
                   )}
                 >
                   {business.name}
@@ -118,55 +100,38 @@ export function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 space-y-1">
         {visibleNav.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-          const Icon = item.icon
           
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                'flex items-center px-4 py-2.5 gap-3 font-sans text-sm font-medium tracking-tight transition-all mx-3 rounded-full',
                 isActive 
-                  ? 'bg-teal-600 text-white' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-teal-100/50 dark:bg-teal-900/30 text-teal-800 dark:text-teal-200 active:scale-[0.98]' 
+                  : 'text-slate-600 dark:text-slate-400 hover:text-blue-900 dark:hover:text-blue-200 hover:bg-slate-200 dark:hover:bg-slate-800'
               )}
             >
-              <Icon className={cn('w-5 h-5', isActive ? 'text-white' : 'text-slate-400')} />
-              {item.label}
+              <span className="material-symbols-outlined">{item.icon}</span>
+              <span>{item.label}</span>
             </Link>
           )
         })}
       </nav>
 
-      {/* User Profile */}
-      <div className="p-4 border-t border-slate-800">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center">
-            <UserCircle className="w-6 h-6 text-slate-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">{user?.email}</p>
-            {role && (
-              <span className={cn(
-                'text-xs px-2 py-0.5 rounded-full border',
-                getRoleBadgeColor(role)
-              )}>
-                {getRoleLabel(role)}
-              </span>
-            )}
-          </div>
-        </div>
+      {/* Logout */}
+      <div className="mt-auto px-3">
         <button
-          className="w-full flex items-center justify-start gap-2 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors"
+          className="w-full flex items-center px-4 py-2.5 gap-3 font-sans text-sm font-medium tracking-tight text-slate-600 dark:text-slate-400 hover:text-blue-900 dark:hover:text-blue-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors rounded-full"
           onClick={handleLogout}
         >
-          <LogOut className="w-4 h-4" />
-          Logout
+          <span className="material-symbols-outlined">logout</span>
+          <span>Logout</span>
         </button>
       </div>
-    </div>
+    </aside>
   )
 }

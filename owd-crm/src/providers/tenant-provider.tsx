@@ -23,7 +23,6 @@ interface BusinessUser {
   email: string
   role: UserRole
   business_id: string
-  distributor_id?: string
   businesses?: Business[]
   distributors?: Distributor[]
 }
@@ -33,7 +32,6 @@ interface TenantContextType {
   role: UserRole | null
   currentBusiness: Business | null
   availableBusinesses: Business[]
-  distributor: Distributor | null
   isLoading: boolean
   setCurrentBusiness: (business: Business) => void
   refreshUser: () => Promise<void>
@@ -60,24 +58,30 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      // Fetch user profile with business/distributor info
-      const { data: businessUser, error } = await supabase
-        .from('business_users')
-        .select(`
-          id,
-          email,
-          role,
-          business_id,
-          distributor_id,
-          businesses:business_id (id, name, slug, logo_url, primary_color),
-          distributors:distributor_id (id, name)
-        `)
-        .eq('email', authUser.email)
-        .single()
+    // Fetch user profile with business info
+    const { data: businessUser, error } = await supabase
+      .from('business_users')
+      .select(`
+        id,
+        email,
+        role,
+        business_id,
+        businesses:business_id (id, name, slug, logo_url, primary_color)
+      `)
+      .eq('id', authUser.id)
+      .maybeSingle()
 
-      if (error || !businessUser) {
+      if (error) {
         console.error('Error fetching user:', error)
         setUser(null)
+        return
+      }
+
+      if (!businessUser) {
+        // User exists in auth but has no business_users record yet
+        setUser(null)
+        setCurrentBusiness(null)
+        setAvailableBusinesses([])
         return
       }
 
@@ -94,11 +98,13 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           .from('businesses')
           .select('id, name, slug, logo_url, primary_color')
         setAvailableBusinesses(allBusinesses || [])
-      } else if (businessUser.role === 'distributor' && businessUser.distributor_id) {
+      } else if (businessUser.role === 'distributor') {
         const { data: distBusinesses } = await supabase
           .from('businesses')
           .select('id, name, slug, logo_url, primary_color')
-          .eq('distributor_id', businessUser.distributor_id)
+          // A distributor user has a business_id referencing their distributor business,
+          // and we want to find all businesses that have this distributor_id
+          .eq('distributor_id', businessUser.business_id)
         setAvailableBusinesses(distBusinesses || [])
       } else {
         // Business users only see their own business
@@ -133,7 +139,6 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     role: user?.role || null,
     currentBusiness,
     availableBusinesses,
-    distributor: user?.distributors?.[0] || null,
     isLoading,
     setCurrentBusiness,
     refreshUser: fetchUserData,
