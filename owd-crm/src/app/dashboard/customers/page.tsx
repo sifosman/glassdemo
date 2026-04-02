@@ -12,13 +12,17 @@ export default async function CustomersPage() {
   }
 
   // Fetch customers with their quote counts and total spent
-  const { data: customers } = await supabase
+  const { data: customers, error: fetchError } = await supabase
     .from('customers')
     .select(`
       *,
-      quotes(id, total_amount, status)
+      quotes(id, total, status)
     `)
     .order('created_at', { ascending: false })
+
+  if (fetchError) {
+    console.error('Error fetching customers:', fetchError)
+  }
 
   const customersData = customers || []
 
@@ -28,8 +32,8 @@ export default async function CustomersPage() {
     c.quotes && c.quotes.some((q: { status: string }) => q.status === 'accepted')
   ).length
   const totalRevenue = customersData.reduce((sum, c) => {
-    const customerRevenue = c.quotes?.reduce((qSum: number, q: { total_amount: string, status: string }) => 
-      q.status === 'accepted' ? qSum + parseFloat(q.total_amount || '0') : qSum, 0) || 0
+    const customerRevenue = c.quotes?.reduce((qSum: number, q: { total: string | number, status: string }) => 
+      q.status === 'accepted' ? qSum + parseFloat(q.total?.toString() || '0') : qSum, 0) || 0
     return sum + customerRevenue
   }, 0)
 
@@ -160,8 +164,8 @@ export default async function CustomersPage() {
             ) : (
               customersData.map((customer) => {
                 const quoteCount = customer.quotes?.length || 0
-                const totalSpent = customer.quotes?.reduce((sum: number, q: { total_amount: string, status: string }) => 
-                  q.status === 'accepted' ? sum + parseFloat(q.total_amount || '0') : sum, 0) || 0
+                const totalSpent = customer.quotes?.reduce((sum: number, q: { total: string | number, status: string }) => 
+                  q.status === 'accepted' ? sum + parseFloat(q.total?.toString() || '0') : sum, 0) || 0
                 const hasActiveQuotes = customer.quotes?.some((q: { status: string }) => q.status === 'accepted')
 
                 return (
