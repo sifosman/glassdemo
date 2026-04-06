@@ -17,6 +17,31 @@ type CompanyConfig = {
   [key: string]: unknown;
 };
 
+// Glass size deduction configuration
+// Based on professional aluminum window installation standards
+type DeductionConfig = {
+  frameTolerance_mm: number;  // 10mm total (5mm per side for silicone/sealing)
+  profileDeductions: {
+    [profileName: string]: number;  // Profile-specific glass pocket deduction
+  };
+  defaultProfileDeduction_mm: number;  // 38mm standard for most aluminum windows
+};
+
+const DEFAULT_DEDUCTION_CONFIG: DeductionConfig = {
+  frameTolerance_mm: 10,  // 5mm per side
+  profileDeductions: {
+    'crealco_swift_28': 38,
+    'crealco_swift_34': 38,
+    'crealco_swift_38': 38,
+    'crealco_clip_44': 45,
+    'casement_30.5': 38,
+    'casement_38': 38,
+    'shopfront': 45,
+    'sliding_door': 45
+  },
+  defaultProfileDeduction_mm: 38
+};
+
 export class ProductPricingService {
   private products: Product[] = [];
   private companyConfig: CompanyConfig | null = null;
@@ -181,6 +206,60 @@ export class ProductPricingService {
     return 'PIS71149'; // Default to charcoal
   }
 
+  // Calculate glass size from opening size using professional deduction logic
+  // This is the "Secret Sauce" - opening size minus frame tolerance and profile deduction
+  private calculateGlassSizeFromOpening(
+    openingWidth_mm: number,
+    openingHeight_mm: number,
+    type: string
+  ): {
+    openingWidth_mm: number;
+    openingHeight_mm: number;
+    glassWidth_mm: number;
+    glassHeight_mm: number;
+    frameTolerance_mm: number;
+    profileDeduction_mm: number;
+    totalDeduction_mm: number;
+  } {
+    const config = DEFAULT_DEDUCTION_CONFIG;
+    
+    // Determine profile type from item type
+    const normalizedType = type.toLowerCase();
+    let profileKey = 'default';
+    
+    if (normalizedType.includes('shopfront') || normalizedType.includes('shop_front')) {
+      profileKey = 'shopfront';
+    } else if (normalizedType.includes('sliding_door') || normalizedType.includes('sliding door')) {
+      profileKey = 'sliding_door';
+    } else if (normalizedType.includes('door')) {
+      profileKey = 'crealco_clip_44';
+    } else if (normalizedType.includes('window')) {
+      // Use Swift 28 as default for windows
+      profileKey = 'crealco_swift_28';
+    }
+    
+    // Get profile-specific deduction (glass pocket depth)
+    const profileDeduction_mm = config.profileDeductions[profileKey] || config.defaultProfileDeduction_mm;
+    
+    // Total deduction: frame tolerance (10mm) + profile deduction (38-45mm)
+    const totalDeduction_mm = config.frameTolerance_mm + profileDeduction_mm;
+    
+    // Calculate glass size (opening minus total deduction on both dimensions)
+    // The deduction is applied to both width and height
+    const glassWidth_mm = Math.max(0, openingWidth_mm - totalDeduction_mm);
+    const glassHeight_mm = Math.max(0, openingHeight_mm - totalDeduction_mm);
+    
+    return {
+      openingWidth_mm,
+      openingHeight_mm,
+      glassWidth_mm,
+      glassHeight_mm,
+      frameTolerance_mm: config.frameTolerance_mm,
+      profileDeduction_mm,
+      totalDeduction_mm
+    };
+  }
+
   // Get glass specification based on type and safety requirements
   private getGlassSpec(glassType: string, isSafetyGlass: boolean): { type: string, thickness: string } {
     if (isSafetyGlass) {
@@ -214,15 +293,23 @@ export class ProductPricingService {
     frameColor: string,
     thickness?: number
   ) {
-    // Calculate area in m²
-    const area_m2 = (width_mm * height_mm) / 1000000;
+    // STEP 1: Calculate glass size from opening size using professional deductions
+    // Incoming width_mm/height_mm are treated as OPENING sizes (brick opening)
+    const sizeCalculation = this.calculateGlassSizeFromOpening(width_mm, height_mm, type);
+    
+    // STEP 2: Calculate pricing area using the GLASS size (not opening size)
+    // This is the "Secret Sauce" - professional software prices the glass, not the hole
+    const glassArea_m2 = (sizeCalculation.glassWidth_mm * sizeCalculation.glassHeight_mm) / 1000000;
+    
+    // Keep original opening area for reference
+    const openingArea_m2 = (sizeCalculation.openingWidth_mm * sizeCalculation.openingHeight_mm) / 1000000;
     
     // Apply minimum area rule (from your config)
     const minOrderValue = this.companyConfig?.quote_settings?.min_order_value || 500;
     const minArea = 0.25; // Standard minimum area
     
-    // Determine if safety glass is required
-    const isSafetyGlass = this.requiresSafetyGlass(type, area_m2);
+    // Determine if safety glass is required (based on glass size, not opening size)
+    const isSafetyGlass = this.requiresSafetyGlass(type, glassArea_m2);
     
     // Get proper glass spec
     const glassSpec = this.getGlassSpec(glassType, isSafetyGlass);
@@ -236,8 +323,8 @@ export class ProductPricingService {
       product = this.createFallbackProduct(glassType, isSafetyGlass, thickness);
     }
 
-    // Calculate pricing
-    const billableArea = Math.max(area_m2, minArea);
+    // Calculate pricing using GLASS area (the actual glass size)
+    const billableArea = Math.max(glassArea_m2, minArea);
     const unitPrice = product.price_per_sqm;
     const totalPrice = billableArea * unitPrice;
 
@@ -250,9 +337,22 @@ export class ProductPricingService {
 
     return {
       product,
-      area_m2: billableArea,
+      // Opening size (what the contractor provides)
+      openingWidth_mm: sizeCalculation.openingWidth_mm,
+      openingHeight_mm: sizeCalculation.openingHeight_mm,
+      openingArea_m2,
+      // Glass size (what we actually price - after deductions)
+      glassWidth_mm: sizeCalculation.glassWidth_mm,
+      glassHeight_mm: sizeCalculation.glassHeight_mm,
+      glassArea_m2,
+      // Deduction details (for transparency in quote)
+      frameTolerance_mm: sizeCalculation.frameTolerance_mm,
+      profileDeduction_mm: sizeCalculation.profileDeduction_mm,
+      totalDeduction_mm: sizeCalculation.totalDeduction_mm,
+      // Pricing
+      area_m2: billableArea,  // This is the billable glass area
       unitPrice,
-      totalPrice,
+      totalPrice: finalPrice,
       isSafetyGlass,
       systemName,
       glassSpec,

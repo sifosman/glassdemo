@@ -20,7 +20,11 @@ export interface GlassItem {
 export interface CalculatedItem {
   description: string;
   quantity: number;
-  size_mm: string;
+  // Opening size (what contractor provides)
+  openingSize_mm: string;
+  openingArea_m2: number;
+  // Glass size (actual glass after deductions)
+  glassSize_mm: string;
   area_m2: number;
   unitPrice: number;
   totalPrice: number;
@@ -30,6 +34,10 @@ export interface CalculatedItem {
   glassSpec?: { type: string; thickness: string };
   powderCoatCode?: string;
   frameColor?: string;
+  // Deduction details for transparency
+  frameTolerance_mm?: number;
+  profileDeduction_mm?: number;
+  totalDeduction_mm?: number;
 }
 
 export interface Quote {
@@ -79,7 +87,11 @@ export class GlassQuoteService {
       calculatedItems.push({
         description: pricing.description,
         quantity: 1,
-        size_mm: `${item.width_mm} x ${item.height_mm}`,
+        // Opening size (what contractor provides from sketch)
+        openingSize_mm: `${pricing.openingWidth_mm} x ${pricing.openingHeight_mm}`,
+        openingArea_m2: pricing.openingArea_m2,
+        // Glass size (after deductions - what we actually price)
+        glassSize_mm: `${pricing.glassWidth_mm} x ${pricing.glassHeight_mm}`,
         area_m2: pricing.area_m2,
         unitPrice: pricing.unitPrice,
         totalPrice: pricing.totalPrice,
@@ -88,7 +100,11 @@ export class GlassQuoteService {
         systemName: pricing.systemName,
         glassSpec: pricing.glassSpec,
         powderCoatCode: pricing.powderCoatCode,
-        frameColor: pricing.frameColor
+        frameColor: pricing.frameColor,
+        // Deduction details for transparency
+        frameTolerance_mm: pricing.frameTolerance_mm,
+        profileDeduction_mm: pricing.profileDeduction_mm,
+        totalDeduction_mm: pricing.totalDeduction_mm
       });
 
       subtotal += pricing.totalPrice;
@@ -110,7 +126,9 @@ export class GlassQuoteService {
       groupedItems.push({
         description: 'Glazing Certificate',
         quantity: 1,
-        size_mm: 'N/A',
+        openingSize_mm: 'N/A',
+        openingArea_m2: 0,
+        glassSize_mm: 'N/A',
         area_m2: 0,
         unitPrice: 368.49,
         totalPrice: 368.49,
@@ -161,8 +179,8 @@ export class GlassQuoteService {
     const grouped = new Map<string, CalculatedItem>();
 
     for (const item of items) {
-      // Create a unique key based on item properties
-      const key = `${item.systemName}-${item.size_mm}-${item.glassSpec?.type}-${item.glassSpec?.thickness}-${item.frameColor}-${item.powderCoatCode}`;
+      // Create a unique key based on item properties (using glass size for grouping)
+      const key = `${item.systemName}-${item.glassSize_mm}-${item.glassSpec?.type}-${item.glassSpec?.thickness}-${item.frameColor}-${item.powderCoatCode}`;
       
       if (grouped.has(key)) {
         // Item already exists, increment quantity and total
