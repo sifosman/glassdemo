@@ -16,7 +16,9 @@ interface Quote {
   items: Array<{
     description: string;
     quantity: number;
-    size_mm: string;
+    openingSize_mm: string;
+    openingArea_m2: number;
+    glassSize_mm: string;
     area_m2: number;
     unitPrice: number;
     totalPrice: number;
@@ -235,7 +237,7 @@ export default function QuotePage() {
     content += `------------------------------------------------\n`;
     
     quote.items.forEach(item => {
-      content += `${item.description}\t${item.quantity}\t${item.size_mm}\tR ${item.totalPrice.toFixed(2)}\n`;
+      content += `${item.description}\t${item.quantity}\t${item.glassSize_mm}\tR ${item.totalPrice.toFixed(2)}\n`;
     });
     
     content += `\nSUMMARY\n`;
@@ -455,8 +457,8 @@ export default function QuotePage() {
               };
               
               const ref = generateRef(item.description, index);
-              const widthMm = parseInt(item.size_mm.split(' x ')[0]);
-              const heightMm = parseInt(item.size_mm.split(' x ')[1]);
+              const widthMm = parseInt(item.glassSize_mm.split(' x ')[0]);
+              const heightMm = parseInt(item.glassSize_mm.split(' x ')[1]);
               
               // Calculate proportional diagram size
               const maxSize = 200; // max pixels
@@ -559,9 +561,9 @@ export default function QuotePage() {
                           <div className="space-y-1 text-sm">
                             <p><span className="text-gray-900">Reference:</span> <span className="font-bold text-gray-900">{ref}</span></p>
                             <p><span className="text-gray-900">Type:</span> <span className="font-medium text-gray-900">{item.description.includes('door') ? 'Door' : item.description.includes('window') ? 'Window' : item.description.includes('Certificate') ? 'Documentation' : 'Panel'}</span></p>
-                            {item.size_mm !== 'N/A' && (
+                            {item.glassSize_mm !== 'N/A' && (
                               <>
-                                <p><span className="text-gray-900">Size:</span> <span className="font-medium text-gray-900">{item.size_mm}</span></p>
+                                <p><span className="text-gray-900">Size:</span> <span className="font-medium text-gray-900">{item.glassSize_mm}</span></p>
                                 <p><span className="text-gray-900">Area:</span> <span className="font-medium text-gray-900">{((widthMm * heightMm) / 1000000).toFixed(2)}m²</span></p>
                               </>
                             )}
@@ -584,7 +586,7 @@ export default function QuotePage() {
                                 <p><span className="text-gray-900">Compliance:</span> <span className="font-medium text-green-600">SANS 10400-N</span></p>
                               </>
                             )}
-                            {!item.is_safety_glass && item.size_mm !== 'N/A' && (
+                            {!item.is_safety_glass && item.glassSize_mm !== 'N/A' && (
                               <p><span className="text-gray-900">Safety Rating:</span> <span className="font-medium text-gray-900">Standard Grade</span></p>
                             )}
                           </div>

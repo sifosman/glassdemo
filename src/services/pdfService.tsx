@@ -371,7 +371,7 @@ const buildItemRefs = (items: CalculatedItem[]) => {
   let d = 0;
 
   for (const item of items) {
-    const size = parseSizeMm(item.size_mm);
+    const size = parseSizeMm(item.glassSize_mm);
     const diagram = size ? buildDiagramModel(item, size) : null;
     const kind = diagram?.kind || inferKind(item);
     if (kind === 'window') {
@@ -468,7 +468,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({ quote }) => {
               <Text style={[styles.td, styles.colRef]}>{r.ref}</Text>
               <Text style={[styles.td, styles.colDesc]}>{r.item.description}</Text>
               <Text style={[styles.td, styles.colQty]}>{r.item.quantity}</Text>
-              <Text style={[styles.td, styles.colSize]}>{r.item.size_mm}</Text>
+              <Text style={[styles.td, styles.colSize]}>{r.item.glassSize_mm}</Text>
               <Text style={[styles.td, styles.colSpec]}>
                 {(r.item.systemName ? `${r.item.systemName} • ` : '') + (r.item.glassSpec ? `${r.item.glassSpec.thickness} ${r.item.glassSpec.type}` : 'Glass')}
               </Text>
@@ -547,7 +547,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({ quote }) => {
                   <View style={styles.diagramWrap}>
                     {r.diagram ? <TechnicalDiagram model={r.diagram} /> : null}
                     <View style={styles.diagramLabelRow}>
-                      <Text style={styles.diagramLabel}>{r.item.size_mm}</Text>
+                      <Text style={styles.diagramLabel}>{r.item.glassSize_mm}</Text>
                       <Text style={styles.diagramLabel}>{r.diagram?.kind === 'sliding_door' ? 'Sliding Door' : 'Window'}</Text>
                     </View>
                   </View>
@@ -576,7 +576,7 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({ quote }) => {
                     <Text style={styles.specTitle}>Measurements</Text>
                     <View style={styles.specRow}>
                       <Text style={styles.specKey}>Overall</Text>
-                      <Text style={styles.specVal}>{r.item.size_mm} mm</Text>
+                      <Text style={styles.specVal}>{r.item.glassSize_mm} mm</Text>
                     </View>
                     {r.diagram ? (
                       <View style={styles.specRow}>
@@ -781,7 +781,7 @@ export class PDFService {
                   <View key={`inv-${index}`} style={styles.tr}>
                     <Text style={[styles.td, styles.colDesc]}>{item.description}</Text>
                     <Text style={[styles.td, styles.colQty]}>{item.quantity}</Text>
-                    <Text style={[styles.td, styles.colSize]}>{item.size_mm}</Text>
+                    <Text style={[styles.td, styles.colSize]}>{item.glassSize_mm}</Text>
                     <Text style={[styles.td, styles.colTotal]}>{formatMoney(item.totalPrice)}</Text>
                   </View>
                 ))

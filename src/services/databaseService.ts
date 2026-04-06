@@ -109,9 +109,10 @@ export class DatabaseService {
 
       // Create quote items
       const quoteItems = quote.items.map(item => {
-        const hasDimensions = item.size_mm.includes(' x ');
+        // Use glass size (actual manufactured size) for database storage
+        const hasDimensions = item.glassSize_mm && item.glassSize_mm.includes(' x ');
         const [widthValue, heightValue] = hasDimensions
-          ? item.size_mm.split(' x ')
+          ? item.glassSize_mm.split(' x ')
           : ['0', '0'];
 
         return {
@@ -243,7 +244,9 @@ export class DatabaseService {
               `${item.products.name} - ${item.products.category} (${item.products.glass_type})` : 
               systemName),
             quantity: item.quantity,
-            size_mm: `${item.width_mm} x ${item.height_mm}`,
+            openingSize_mm: `${item.width_mm} x ${item.height_mm}`,
+            openingArea_m2: item.area_sqm,
+            glassSize_mm: `${item.width_mm} x ${item.height_mm}`,
             area_m2: item.area_sqm,
             unitPrice: item.unit_price,
             totalPrice: item.line_total,
@@ -441,7 +444,9 @@ export class DatabaseService {
                 `${item.products.name} - ${item.products.category} (${item.products.glass_type})` : 
                 systemName),
               quantity: item.quantity,
-              size_mm: `${item.width_mm} x ${item.height_mm}`,
+              openingSize_mm: `${item.width_mm} x ${item.height_mm}`,
+              openingArea_m2: item.area_sqm,
+              glassSize_mm: `${item.width_mm} x ${item.height_mm}`,
               area_m2: item.area_sqm,
               unitPrice: item.unit_price,
               totalPrice: item.line_total,
