@@ -38,6 +38,11 @@ export interface CalculatedItem {
   frameTolerance_mm?: number;
   profileDeduction_mm?: number;
   totalDeduction_mm?: number;
+  // SANS 10400-N compliance fields
+  wastageFactor?: number;
+  basePrice?: number;
+  sansUpgraded?: boolean;
+  sansUpgradeReason?: string;
 }
 
 export interface Quote {
@@ -104,14 +109,23 @@ export class GlassQuoteService {
         // Deduction details for transparency
         frameTolerance_mm: pricing.frameTolerance_mm,
         profileDeduction_mm: pricing.profileDeduction_mm,
-        totalDeduction_mm: pricing.totalDeduction_mm
+        totalDeduction_mm: pricing.totalDeduction_mm,
+        // SANS 10400-N compliance fields
+        wastageFactor: pricing.wastageFactor,
+        basePrice: pricing.basePrice,
+        sansUpgraded: pricing.sansUpgraded,
+        sansUpgradeReason: pricing.sansUpgradeReason
       });
 
       subtotal += pricing.totalPrice;
 
       if (pricing.isSafetyGlass) {
         requiresSafetyGlass = true;
-        safetyReasons.push(`${item.type} requires safety glass`);
+        if (pricing.sansUpgraded) {
+          safetyReasons.push(`${item.type}: ${pricing.sansUpgradeReason}`);
+        } else {
+          safetyReasons.push(`${item.type} requires safety glass`);
+        }
       }
     }
 

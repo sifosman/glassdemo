@@ -17,6 +17,9 @@ type CompanyConfig = {
   [key: string]: unknown;
 };
 
+// SANS 10400-N Safety Constants
+const SANS_AREA_LIMIT_M2 = 1.5; // 4mm float illegal if pane > 1.5m²
+
 // Glass size deduction configuration
 // Based on professional aluminum window installation standards
 type DeductionConfig = {
@@ -47,6 +50,12 @@ export class ProductPricingService {
   private companyConfig: CompanyConfig | null = null;
   private productsLoaded: boolean = false;
   private configLoaded: boolean = false;
+
+  // Wastage factors per SANS industry standards
+  private readonly WASTAGE = {
+    aluminum: 1.15, // 15% wastage for aluminum profiles (can't buy half a 6m bar)
+    glass: 1.15     // 15% wastage for glass offcuts
+  };
 
   constructor() {
     // Don't call async methods in constructor
@@ -260,28 +269,31 @@ export class ProductPricingService {
     };
   }
 
-  // Get glass specification based on type and safety requirements
-  private getGlassSpec(glassType: string, isSafetyGlass: boolean): { type: string, thickness: string } {
-    if (isSafetyGlass) {
-      // Safety glass uses 6.38mm PVB Laminated
+  // Get glass specification based on type, safety requirements, and SANS 10400-N area limits
+  private getGlassSpec(glassType: string, isSafetyGlass: boolean, area_m2: number): { type: string, thickness: string, sansUpgraded: boolean } {
+    // SANS 10400-N: 4mm Float glass is illegal if pane > 1.5m²
+    const requiresSafetyDueToArea = area_m2 > SANS_AREA_LIMIT_M2;
+    
+    if (isSafetyGlass || requiresSafetyDueToArea) {
       return {
         type: 'PVB Laminated Safety Glass',
-        thickness: '6.38mm'
+        thickness: '6.38mm',
+        sansUpgraded: requiresSafetyDueToArea && !isSafetyGlass
       };
     }
     
     // Standard glass specifications
     const normalized = glassType.toLowerCase();
     if (normalized.includes('low-e')) {
-      return { type: 'Low-E Energy Efficient', thickness: '6mm' };
+      return { type: 'Low-E Energy Efficient', thickness: '6mm', sansUpgraded: false };
     } else if (normalized.includes('tinted')) {
-      return { type: 'Tinted Float', thickness: '6mm' };
+      return { type: 'Tinted Float', thickness: '6mm', sansUpgraded: false };
     } else if (normalized.includes('frosted')) {
-      return { type: 'Frosted Obscure', thickness: '6mm' };
+      return { type: 'Frosted Obscure', thickness: '6mm', sansUpgraded: false };
     }
     
-    // Default: Clear Float
-    return { type: 'Clear Float', thickness: '4mm' };
+    // Default: Clear Float (only allowed if area <= 1.5m² per SANS)
+    return { type: 'Clear Float', thickness: '4mm', sansUpgraded: false };
   }
 
   // Calculate pricing for a single item
@@ -311,25 +323,32 @@ export class ProductPricingService {
     // Determine if safety glass is required (based on glass size, not opening size)
     const isSafetyGlass = this.requiresSafetyGlass(type, glassArea_m2);
     
-    // Get proper glass spec
-    const glassSpec = this.getGlassSpec(glassType, isSafetyGlass);
+    // Get proper glass spec (now includes SANS 10400-N area limit check)
+    const glassSpec = this.getGlassSpec(glassType, isSafetyGlass, glassArea_m2);
     
-    // Find the best product
-    let product = this.findBestProduct(glassType, isSafetyGlass, thickness);
+    // Update isSafetyGlass if SANS area limit triggered upgrade
+    const finalIsSafetyGlass = isSafetyGlass || glassSpec.sansUpgraded;
+    
+    // Find the best product (use updated safety status)
+    let product = this.findBestProduct(glassType, finalIsSafetyGlass, thickness);
     
     // If no product found in database, create fallback
     if (!product) {
-      console.log(`No database product found for ${glassType} glass${isSafetyGlass ? ' (safety required)' : ''}, creating fallback product`);
-      product = this.createFallbackProduct(glassType, isSafetyGlass, thickness);
+      console.log(`No database product found for ${glassType} glass${finalIsSafetyGlass ? ' (safety required)' : ''}, creating fallback product`);
+      product = this.createFallbackProduct(glassType, finalIsSafetyGlass, thickness);
     }
 
-    // Calculate pricing using GLASS area (the actual glass size)
+    // Calculate pricing using GLASS area with SANS wastage factors
+    // Formula: (Glass m² × Rate) × Wastage
     const billableArea = Math.max(glassArea_m2, minArea);
     const unitPrice = product.price_per_sqm;
-    const totalPrice = billableArea * unitPrice;
+    const basePrice = billableArea * unitPrice;
+    
+    // Apply SANS wastage factor (15% for glass offcuts)
+    const priceWithWastage = basePrice * this.WASTAGE.glass;
 
     // Apply minimum charge if applicable
-    const finalPrice = Math.max(totalPrice, product.min_charge || 0);
+    const finalPrice = Math.max(priceWithWastage, product.min_charge || 0);
 
     // Get system name and powder coat code
     const systemName = this.getSystemName(type);
@@ -349,11 +368,15 @@ export class ProductPricingService {
       frameTolerance_mm: sizeCalculation.frameTolerance_mm,
       profileDeduction_mm: sizeCalculation.profileDeduction_mm,
       totalDeduction_mm: sizeCalculation.totalDeduction_mm,
-      // Pricing
-      area_m2: billableArea,  // This is the billable glass area
+      // Pricing with SANS wastage applied
+      area_m2: billableArea,
       unitPrice,
+      wastageFactor: this.WASTAGE.glass,
+      basePrice,
       totalPrice: finalPrice,
-      isSafetyGlass,
+      isSafetyGlass: finalIsSafetyGlass,
+      sansUpgraded: glassSpec.sansUpgraded,
+      sansUpgradeReason: glassSpec.sansUpgraded ? `SANS 10400-N: Area ${glassArea_m2.toFixed(2)}m² exceeds 1.5m² limit for 4mm float glass` : undefined,
       systemName,
       glassSpec,
       powderCoatCode,
