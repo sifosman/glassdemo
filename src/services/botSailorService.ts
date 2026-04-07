@@ -201,4 +201,94 @@ export class BotSailorService {
       throw new Error('Failed to send WhatsApp message via BotSailor');
     }
   }
+
+  async send24HourReminder(
+    whatsappUserId: string,
+    referenceNumber: string,
+    systemType: string,
+    callOutFee: number,
+    checkoutUrl: string
+  ): Promise<void> {
+    try {
+      const message = `⏰ *Friendly Reminder - OWD Glass*
+
+Hi there! You recently requested a repair quote for your ${systemType}.
+
+📋 Quote: ${referenceNumber}
+💰 Call-out Fee: R${callOutFee.toFixed(2)}
+
+Your quote is still pending. Secure your booking by paying the call-out fee:
+👉 ${checkoutUrl}
+
+Questions? Reply to this message or call us:
+📞 +27 12 345 6789
+
+OWD Glass - Professional Glazing Solutions`;
+
+      await this.sendTextMessage(whatsappUserId, message);
+      console.log(`24-hour reminder sent successfully to ${whatsappUserId} for ${referenceNumber}`);
+      
+    } catch (error) {
+      console.error('Error sending 24-hour reminder via BotSailor:', error);
+      throw error;
+    }
+  }
+
+  async send72HourReminder(
+    whatsappUserId: string,
+    referenceNumber: string,
+    checkoutUrl: string
+  ): Promise<void> {
+    try {
+      const message = `⏰ *Second Reminder - OWD Glass*
+
+We noticed you haven't completed your booking yet for ${referenceNumber}.
+
+⚠️ Our schedule fills up quickly! Pay now to secure your preferred date:
+👉 ${checkoutUrl}
+
+Need help? Call us or reply here:
+📞 +27 12 345 6789
+📧 info@owdglass.co.za
+
+OWD Glass - Professional Glazing Solutions`;
+
+      await this.sendTextMessage(whatsappUserId, message);
+      console.log(`72-hour reminder sent successfully to ${whatsappUserId} for ${referenceNumber}`);
+      
+    } catch (error) {
+      console.error('Error sending 72-hour reminder via BotSailor:', error);
+      throw error;
+    }
+  }
+
+  async send7DayReminder(
+    whatsappUserId: string,
+    referenceNumber: string,
+    callOutFee: number,
+    checkoutUrl: string
+  ): Promise<void> {
+    try {
+      const message = `⏰ *Final Reminder - OWD Glass*
+
+Your repair quote ${referenceNumber} will expire soon.
+
+💰 Final amount: R${callOutFee.toFixed(2)}
+👉 ${checkoutUrl}
+
+This is our last reminder. If you're no longer interested, no action is needed.
+
+Still need help? We're here:
+📞 +27 12 345 6789
+
+OWD Glass - Professional Glazing Solutions`;
+
+      await this.sendTextMessage(whatsappUserId, message);
+      console.log(`7-day reminder sent successfully to ${whatsappUserId} for ${referenceNumber}`);
+      
+    } catch (error) {
+      console.error('Error sending 7-day reminder via BotSailor:', error);
+      throw error;
+    }
+  }
 }
