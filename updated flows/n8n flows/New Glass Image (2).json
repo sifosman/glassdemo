@@ -105,7 +105,7 @@
         "url": "={{ $('Workflow Configuration').first().json.applicationApiUrl }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"customer\": {\n    \"name\": \"{{ $('Webhook').item.json.body.first_name }}\",\n    \"email\": \"Test@example.com\",\n    \"phone\": \"{{ $('Webhook').item.json.body.chat_id }}\",\n    \"address\": \"Test Address\"\n  },\n  \"items\":{{ $json.items }} ,\n  \"whatsappUserId\": \"{{ $('Webhook').item.json.body.chat_id }}\"\n}",
+        "jsonBody": "={\n  \"customer\": {\n    \"name\": \"{{ $('Webhook').item.json.body.first_name }}\",\n    \"email\": \"Test@example.com\",\n    \"phone\": \"{{ $('Webhook').item.json.body.chat_id }}\",\n    \"address\": \"Test Address\"\n  },\n  \"items\": {{ JSON.stringify($json.items.map(item => ({\n    ...item,\n    opening_mechanism: item.opening_mechanism || 'unknown'\n  }))) }},\n  \"whatsappUserId\": \"{{ $('Webhook').item.json.body.chat_id }}\"\n}",
         "options": {}
       },
       "id": "9fc8b8df-c8d2-4f1c-8676-2e0e4fb5d17c",

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
-import { BotSailorService } from '@/services/botSailorService';
+import { MetaWhatsAppService } from '@/services/metaWhatsAppService';
 import { PDFService } from '@/services/pdfService';
 
 // Initialize Supabase client
@@ -299,7 +299,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Failed to update quote status' }, { status: 500 });
         }
 
-        const botSailorService = new BotSailorService();
+        const metaWhatsAppService = new MetaWhatsAppService();
         const whatsappUserId = data.custom_str4 || quoteRecord.customer_phone;
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app';
         const quoteUrl = `${baseUrl}/quote/${quoteRecord.quote_number}?reference=${quoteRecord.quote_number}`;
@@ -365,7 +365,7 @@ export async function POST(request: NextRequest) {
 
             const message = `✅ *Payment Received - OWD Glass*\n\nThank you, we have received your deposit payment.\n\n📌 Quote: ${quoteRecord.quote_number}\n💰 Deposit Paid: R${amountGross.toFixed(2)}\n🧾 Total Quote: R${Number(quoteRecord.total || 0).toFixed(2)}\n📌 Remaining Balance: R${remainingBalance.toFixed(2)}\n\nView your quote here:\n${quoteUrl}${quotePdfLine}${invoicePdfLine}\nOur scheduling team will contact you shortly to arrange installation. The remaining balance is due strictly upon completion of installation.\n\nOWD Glass`;
 
-            await botSailorService.sendTextMessage(whatsappUserId, message);
+            await metaWhatsAppService.sendTextMessage(whatsappUserId, message);
             console.log('Payment confirmation WhatsApp message sent successfully');
           } else {
             console.warn('No WhatsApp user ID found to send payment confirmation');
@@ -411,7 +411,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Failed to update quote balance status' }, { status: 500 });
         }
 
-        const botSailorService = new BotSailorService();
+        const metaWhatsAppService = new MetaWhatsAppService();
         const whatsappUserId = data.custom_str4 || quoteRecord.customer_phone;
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app';
         const quoteUrl = `${baseUrl}/quote/${quoteRecord.quote_number}?reference=${quoteRecord.quote_number}`;
@@ -480,7 +480,7 @@ Our scheduling team will contact you shortly to confirm installation details.
 
 OWD Glass`;
 
-            await botSailorService.sendTextMessage(whatsappUserId, message);
+            await metaWhatsAppService.sendTextMessage(whatsappUserId, message);
             console.log('Balance payment confirmation WhatsApp message sent successfully');
           }
         } catch (messageError) {
@@ -527,8 +527,8 @@ OWD Glass`;
 
       // Send WhatsApp payment confirmation to customer
       try {
-        const botSailorService = new BotSailorService();
-        await botSailorService.sendPaymentConfirmation(
+        const metaWhatsAppService = new MetaWhatsAppService();
+        await metaWhatsAppService.sendPaymentConfirmation(
           repairRequest.customer_phone,
           repairRequest.reference_number,
           amountGross

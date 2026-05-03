@@ -33,53 +33,6 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "id-1",
-              "name": "measurements",
-              "value": "={{ $json.content.parts[0].text }}",
-              "type": "string"
-            },
-            {
-              "id": "id-2",
-              "name": "imageUrl",
-              "value": "={{ $('Workflow Configuration').first().json.imageUrlField }}",
-              "type": "string"
-            },
-            {
-              "id": "id-3",
-              "name": "processedAt",
-              "value": "={{ $now.toISO() }}",
-              "type": "string"
-            },
-            {
-              "id": "id-4",
-              "name": "status",
-              "value": "processed",
-              "type": "string"
-            },
-            {
-              "id": "a02355f2-1742-460b-901a-99fa073fde2e",
-              "name": "=items",
-              "value": "={{ JSON.parse($json.content.parts[0].text.replace(/```json\\n/g, '').replace(/```/g, '')).items }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "b2c4098d-86b4-4ee8-aee2-02d62061f4b7",
-      "name": "Format Measurement Data",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        3296,
-        48
-      ]
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "https://botsailor.com/api/v1/whatsapp/send",
         "sendBody": true,
@@ -99,7 +52,7 @@
             },
             {
               "name": "message",
-              "value": "={{ 'Please confirm your glass details:\\n\\n' + (typeof $('Format Measurement Data').item.json.items === 'string' ? JSON.parse($('Format Measurement Data').item.json.items) : $('Format Measurement Data').item.json.items).map(item => '🪟 ' + item.type.toUpperCase() + '\\n📐 Size: ' + item.width_mm + 'mm x ' + item.height_mm + 'mm\\n💎 Glass: ' + item.glassType + ' (' + item.thickness + 'mm)\\n').join('\\n') + '\\nReply \"YES\" to proceed or \"REDO TEXT\" to start over.' }}"
+              "value": "={{ $('Code in JavaScript').item.json.confirmationText }}"
             }
           ]
         },
@@ -125,7 +78,7 @@
         "messages": {
           "values": [
             {
-              "content": "=You are a technical data extractor for OWD Glass. Your job is to extract glass dimensions from unstructured WhatsApp messages.\n\nInput Message: {{ $json.body.user_input_data[0].answer }}\n\nRules:\n\nExtract width and height in millimeters (mm).\n\nIf the user provides meters (e.g., 2m), convert to mm (2000).\n\nIf no glass type is mentioned, default to \"clear\".\n\nIf no thickness is mentioned, default to 6 for windows and 10 for showers/doors.\n\nIdentify the \"type\" (window, door, shower, mirror, repair).\n\nOutput Format (Return ONLY valid JSON):\n{\n\"items\": [\n{\n\"width_mm\": number,\n\"height_mm\": number,\n\"type\": \"string\",\n\"glassType\": \"string\",\n\"thickness\": number\n}\n]\n}"
+              "content": "=### ROLE\nYou are a Senior Architectural Glass Estimator. Extract glass dimensions and specifications from customer messages.\n\n### TASK\nExtract measurements from the ACTUAL INPUT MESSAGE below.\n\n### INPUT MESSAGE:\n{{ $json.body.user_input_data[0].answer }}\n\n### RULES\n1. Dimensions: Extract width_mm and height_mm. Convert meters (1.2m) or cm to mm.\n2. Quantity: Extract how many units (e.g., \"10 pieces\" = quantity 10).\n3. Frame Color: Look for colors like \"white\", \"grey\", \"black\". Map to \"frame_color\".\n4. Type: Map to \"window\", \"door\", \"sliding_door\", \"shower\", or \"mirror\".\n5. Glass: Map to \"clear\", \"low-e\", \"frosted\", \"laminated\", or \"tempered\".\n\n### OUTPUT FORMAT (Return ONLY valid JSON)\n{\n  \"items\": [\n    {\n      \"width_mm\": number,\n      \"height_mm\": number,\n      \"type\": \"string\",\n      \"glass_type\": \"string\",\n      \"thickness_mm\": number,\n      \"frame_color\": \"string\",\n      \"opening_mechanism\": \"string\",\n      \"quantity\": number\n    }\n  ],\n  \"itemCount\": number\n}"
             }
           ]
         },
@@ -187,7 +140,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"chat_id\": \"{{ $('Webhook1').item.json.body.chat_id }}\",\n  \"quote_data\": {{ JSON.stringify($json.items.map(item => ({\n    ...item,\n    opening_mechanism: item.opening_mechanism || 'unknown'\n  }))) }}\n}",
+        "jsonBody": "={\n  \"chat_id\": \"{{ $('Webhook1').item.json.body.chat_id }}\",\n  \"quote_data\": {{ JSON.stringify($json.items) }}\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -204,6 +157,19 @@
           "name": "Header Auth account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "function stripCodeFences(s) {\n  return String(s || '').trim().replace(/^```json\\s*/i, '').replace(/^```\\s*/i, '').replace(/```$/i, '').trim();\n}\n\nfunction toNumber(v) {\n  const n = Number(v);\n  return Number.isFinite(n) ? n : null;\n}\n\nconst webhookBody = $('Webhook1').first().json.body;\nconst rawText = $json.content.parts[0].text;\nconst cleaned = stripCodeFences(rawText);\n\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  parsed = { items: [], itemCount: 0 };\n}\n\nconst globalQuantity = toNumber(parsed.itemCount) || 1;\nlet items = Array.isArray(parsed.items) ? parsed.items : [];\n\nitems = items.map((item) => {\n  const isDoor = String(item.type || '').toLowerCase().includes('door');\n  return {\n    width_mm: toNumber(item.width_mm),\n    height_mm: toNumber(item.height_mm) ?? (isDoor ? 2100 : null),\n    quantity: toNumber(item.quantity) || globalQuantity,\n    type: String(item.type || 'window'),\n    glassType: String(item.glass_type || 'clear'),\n    thickness: toNumber(item.thickness_mm) ?? (isDoor ? 10 : 6),\n    frameColor: item.frame_color || item.frameColor || 'White',\n    openingMechanism: String(item.opening_mechanism || 'unknown'),\n  };\n}).filter(i => i.width_mm);\n\nconst lines = items.map((item, idx) => {\n  return [\n    `Item ${idx + 1}: ${String(item.type).toUpperCase()}`,\n    `📐 Size: ${item.width_mm}mm x ${item.height_mm}mm`,\n    `🔢 Qty: ${item.quantity}`,\n    `💎 Glass: ${item.glassType} (${item.thickness}mm)`,\n    `🎨 Frame: ${item.frameColor}`\n  ].join('\\n');\n});\n\nconst confirmationText = items.length === 0\n  ? `I couldn't extract measurements from your message. Please try again with format: \"1200 x 800 window white clear x5\".`\n  : `Please confirm these are your measurement:\\n\\n${lines.join('\\n\\n')}\\n\\nReply \"YES\" to proceed or \"REDO TEXT\" to start over.`;\n\nreturn [{\n  json: {\n    chat_id: webhookBody.chat_id,\n    items,\n    itemsString: JSON.stringify(items),\n    confirmationText\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2784,
+        48
+      ],
+      "id": "9d45ffaa-998b-4986-9e44-db8de6a0ad05",
+      "name": "Code in JavaScript"
     }
   ],
   "pinData": {
@@ -212,24 +178,24 @@
         "json": {
           "headers": {
             "host": "sifosman.app.n8n.cloud",
-            "content-length": "271",
+            "content-length": "535",
             "accept": "application/json",
             "accept-encoding": "gzip, br",
             "cdn-loop": "cloudflare; loops=1; subreqs=1",
-            "cf-connecting-ip": "2400:6180:0:d2:0:2:5a8e:4000",
+            "cf-connecting-ip": "128.199.112.238",
             "cf-ew-via": "15",
             "cf-ipcountry": "SG",
-            "cf-ray": "9e2d95da7909281e-SIN",
+            "cf-ray": "9e92f792bcab3dce-SIN",
             "cf-visitor": "{\"scheme\":\"https\"}",
             "cf-worker": "n8n.cloud",
             "content-type": "application/json",
-            "x-forwarded-for": "2400:6180:0:d2:0:2:5a8e:4000, 172.71.152.82",
+            "x-forwarded-for": "128.199.112.238, 108.162.226.9",
             "x-forwarded-host": "sifosman.app.n8n.cloud",
             "x-forwarded-port": "443",
             "x-forwarded-proto": "https",
-            "x-forwarded-server": "traefik-prod-users-gwc-40-88d9967ff-9d4wd",
+            "x-forwarded-server": "traefik-prod-users-gwc-40-6965557b58-smtw5",
             "x-is-trusted": "yes",
-            "x-real-ip": "2400:6180:0:d2:0:2:5a8e:4000"
+            "x-real-ip": "128.199.112.238"
           },
           "params": {},
           "query": {},
@@ -240,7 +206,7 @@
             "user_input_data": [
               {
                 "question": "Great, please send me the measurements in a single message here.",
-                "answer": "1 need 400 x 400 get frame 10 pieces"
+                "answer": "Hi, I need a quote for the following:\n​2 x Side-hung windows, 1200mm wide by 1500mm high, charcoal frames, 6mm clear glass.\n​One sliding door, 1800 x 2100, white frame, 10mm clear toughened glass.\n​Also need 5 small fixed panes, 600 wide x 400 high, white frames, 4mm obscure glass."
               }
             ],
             "whatsapp_bot_username": "+27 66 307 7449"
@@ -266,22 +232,11 @@
         ]
       ]
     },
-    "Format Measurement Data": {
-      "main": [
-        [
-          {
-            "node": "Supabase update",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Message a model": {
       "main": [
         [
           {
-            "node": "Format Measurement Data",
+            "node": "Code in JavaScript",
             "type": "main",
             "index": 0
           }
@@ -309,13 +264,25 @@
           }
         ]
       ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Supabase update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   },
-  "versionId": "d704b42e-23bf-4bd4-a387-733421fe7054",
+  "versionId": "fb660d4c-8d57-4d0f-b8e5-d4fcf88c79e2",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "33f53a3b4d83000e68c4b5697f5022c173f43db99cc93da8da17684fff98fab1"

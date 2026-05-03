@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { BotSailorService } from '@/services/botSailorService';
+import { MetaWhatsAppService } from '@/services/metaWhatsAppService';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -63,12 +63,12 @@ export async function POST(request: NextRequest) {
     const checkoutUrl = `${baseUrl}/repair-checkout/${repairRequest.reference_number}`;
 
     // Send WhatsApp reminder
-    const botSailorService = new BotSailorService();
+    const metaWhatsAppService = new MetaWhatsAppService();
 
     try {
       switch (reminder_type) {
         case '24h':
-          await botSailorService.send24HourReminder(
+          await metaWhatsAppService.send24HourReminder(
             repairRequest.customer_phone,
             repairRequest.reference_number,
             repairRequest.system_type || 'glass repair',
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
           break;
 
         case '72h':
-          await botSailorService.send72HourReminder(
+          await metaWhatsAppService.send72HourReminder(
             repairRequest.customer_phone,
             repairRequest.reference_number,
             checkoutUrl
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
           break;
 
         case '7d':
-          await botSailorService.send7DayReminder(
+          await metaWhatsAppService.send7DayReminder(
             repairRequest.customer_phone,
             repairRequest.reference_number,
             repairRequest.calculated_call_out_fee,

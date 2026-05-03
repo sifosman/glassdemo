@@ -15,6 +15,8 @@ export interface GlassItem {
   glassType: string;
   frameColor: string;
   thickness?: number;
+  opening_mechanism?: string; // 'side_hung', 'top_hung', 'sliding', 'fixed', 'unknown'
+  quantity?: number; // Number of identical items (defaults to 1)
 }
 
 export interface CalculatedItem {
@@ -43,6 +45,12 @@ export interface CalculatedItem {
   basePrice?: number;
   sansUpgraded?: boolean;
   sansUpgradeReason?: string;
+  // Hardware and BOM fields (NEW)
+  opening_mechanism?: string;
+  hardware_cost?: number;
+  hardware_kit_name?: string;
+  contingency_percent?: number;
+  contingency_amount?: number;
 }
 
 export interface Quote {
@@ -59,6 +67,11 @@ export interface Quote {
   safetyReason?: string;
   createdDate: string;
   expiryDate: string;
+  // Estimate fields (NEW)
+  isEstimate: boolean;
+  contingencyTotal: number;
+  hardwareTotal: number;
+  estimateDisclaimer: string;
 }
 
 export class GlassQuoteService {
@@ -79,6 +92,9 @@ export class GlassQuoteService {
     const safetyReasons: string[] = [];
 
     // Calculate each item
+    let hardwareTotal = 0;
+    let contingencyTotal = 0;
+    
     for (const item of items) {
       const pricing = this.pricingService.calculateItemPricing(
         item.width_mm,
@@ -89,17 +105,33 @@ export class GlassQuoteService {
         item.thickness
       );
 
+      // Calculate hardware cost based on opening mechanism
+      const openingMechanism = item.opening_mechanism || 'unknown';
+      const hardwareCost = this.calculateHardwareCost(
+        openingMechanism,
+        item.width_mm,
+        item.height_mm
+      );
+
+      // Calculate contingency based on opening mechanism certainty
+      const contingencyPercent = this.getContingencyPercent(openingMechanism);
+      const contingencyAmount = (pricing.totalPrice + hardwareCost) * (contingencyPercent / 100);
+
+      const itemQuantity = item.quantity || 1;
+      const unitPriceWithExtras = pricing.unitPrice + hardwareCost + contingencyAmount;
+      const totalPriceWithExtras = unitPriceWithExtras * itemQuantity;
+
       calculatedItems.push({
         description: pricing.description,
-        quantity: 1,
+        quantity: itemQuantity,
         // Opening size (what contractor provides from sketch)
         openingSize_mm: `${pricing.openingWidth_mm} x ${pricing.openingHeight_mm}`,
         openingArea_m2: pricing.openingArea_m2,
         // Glass size (after deductions - what we actually price)
         glassSize_mm: `${pricing.glassWidth_mm} x ${pricing.glassHeight_mm}`,
         area_m2: pricing.area_m2,
-        unitPrice: pricing.unitPrice,
-        totalPrice: pricing.totalPrice,
+        unitPrice: unitPriceWithExtras,
+        totalPrice: totalPriceWithExtras,
         product_code: pricing.product.product_code,
         is_safety_glass: pricing.isSafetyGlass,
         systemName: pricing.systemName,
@@ -114,10 +146,18 @@ export class GlassQuoteService {
         wastageFactor: pricing.wastageFactor,
         basePrice: pricing.basePrice,
         sansUpgraded: pricing.sansUpgraded,
-        sansUpgradeReason: pricing.sansUpgradeReason
+        sansUpgradeReason: pricing.sansUpgradeReason,
+        // Hardware and BOM fields (NEW)
+        opening_mechanism: openingMechanism,
+        hardware_cost: hardwareCost,
+        hardware_kit_name: this.getHardwareKitName(openingMechanism),
+        contingency_percent: contingencyPercent,
+        contingency_amount: contingencyAmount
       });
 
-      subtotal += pricing.totalPrice;
+      subtotal += totalPriceWithExtras;
+      hardwareTotal += hardwareCost * itemQuantity;
+      contingencyTotal += contingencyAmount * itemQuantity;
 
       if (pricing.isSafetyGlass) {
         requiresSafetyGlass = true;
@@ -184,8 +224,71 @@ export class GlassQuoteService {
       requiresSafetyGlass,
       safetyReason: safetyReasons.join(', ') || undefined,
       createdDate: createdDate.toISOString(),
-      expiryDate: expiryDate.toISOString()
+      expiryDate: expiryDate.toISOString(),
+      // Estimate fields (NEW)
+      isEstimate: true,
+      contingencyTotal,
+      hardwareTotal,
+      estimateDisclaimer: 'This is an ESTIMATE based on provided measurements. Final price confirmed after free site inspection. Full refund if final price varies >20%.'
     };
+  }
+
+  // Get contingency percentage based on opening mechanism certainty
+  private getContingencyPercent(openingMechanism: string): number {
+    switch (openingMechanism) {
+      case 'side_hung':
+      case 'top_hung':
+        return 0; // Confident, no contingency needed
+      case 'sliding':
+        return 0; // Confident, no contingency needed
+      case 'fixed':
+        return 8; // Customer might change mind and want opening
+      case 'unknown':
+      default:
+        return 12; // Uncertain, higher contingency for margin protection
+    }
+  }
+
+  // Get hardware kit name for display
+  private getHardwareKitName(openingMechanism: string): string {
+    switch (openingMechanism) {
+      case 'side_hung':
+        return 'Side Hung Window Kit';
+      case 'top_hung':
+        return 'Top Hung Window Kit';
+      case 'sliding':
+        return 'Sliding Window Kit';
+      case 'fixed':
+        return 'Fixed Window Kit';
+      case 'unknown':
+      default:
+        return 'Standard Window Kit (Conservative)';
+    }
+  }
+
+  // Calculate hardware cost based on opening mechanism and dimensions
+  private calculateHardwareCost(
+    openingMechanism: string,
+    width_mm: number,
+    height_mm: number
+  ): number {
+    // Base hardware costs for each mechanism type
+    const baseHardwareCosts: Record<string, number> = {
+      side_hung: 650, // Friction stays (2x R285) + handle (R95) + lock (R155) + screws (~R30)
+      top_hung: 595,  // Shorter stays (2x R320) + cockspur handle (R115) + lock (R155)
+      sliding: 285,    // Rollers (2x R75) + handle (R135)
+      fixed: 21,      // Just screws (6x R3.50)
+      unknown: 650    // Default to side hung pricing for margin protection
+    };
+
+    const baseCost = baseHardwareCosts[openingMechanism] || baseHardwareCosts.unknown;
+
+    // Calculate gasket length (perimeter in meters)
+    const perimeterMeters = (2 * (width_mm + height_mm)) / 1000;
+    const gasketCostPerMeter = 16; // Average gasket cost
+    const gasketCost = perimeterMeters * gasketCostPerMeter;
+
+    return baseCost + gasketCost;
   }
 
   // Group identical items together
@@ -199,7 +302,7 @@ export class GlassQuoteService {
       if (grouped.has(key)) {
         // Item already exists, increment quantity and total
         const existing = grouped.get(key)!;
-        existing.quantity += 1;
+        existing.quantity += item.quantity;
         existing.totalPrice += item.totalPrice;
       } else {
         // New item, add to map

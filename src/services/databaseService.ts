@@ -268,6 +268,11 @@ export class DatabaseService {
         safetyReason: quoteData.safety_reason || undefined,
         createdDate: quoteData.created_at,
         expiryDate: quoteData.expiry_date || '',
+        // Estimate fields (NEW)
+        isEstimate: true,
+        contingencyTotal: 0,
+        hardwareTotal: 0,
+        estimateDisclaimer: 'This is an ESTIMATE based on provided measurements. Final price confirmed after free site inspection. Full refund if final price varies >20%.',
         pdfUrl: quoteData.pdf_url || undefined,
         invoicePdfUrl,
         statementPdfUrl: quoteData.statement_pdf_url || undefined,
@@ -467,7 +472,12 @@ export class DatabaseService {
           requiresSafetyGlass: quoteData.requires_safety_glass,
           safetyReason: quoteData.safety_reason || undefined,
           createdDate: quoteData.created_at,
-          expiryDate: quoteData.expiry_date || ''
+          expiryDate: quoteData.expiry_date || '',
+          // Estimate fields (NEW)
+          isEstimate: true,
+          contingencyTotal: 0,
+          hardwareTotal: 0,
+          estimateDisclaimer: 'This is an ESTIMATE based on provided measurements. Final price confirmed after free site inspection. Full refund if final price varies >20%.'
         };
 
         fullQuotes.push(transformedQuote);

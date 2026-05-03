@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { BotSailorService } from '@/services/botSailorService';
+import { MetaWhatsAppService } from '@/services/metaWhatsAppService';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const now = new Date();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://glassdemo.vercel.app';
-    const botSailorService = new BotSailorService();
+    const metaWhatsAppService = new MetaWhatsAppService();
 
     for (const repair of repairRequests) {
       const createdAt = new Date(repair.created_at);
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         // Send WhatsApp reminder
         switch (reminderType) {
           case '24h':
-            await botSailorService.send24HourReminder(
+            await metaWhatsAppService.send24HourReminder(
               repair.customer_phone,
               repair.reference_number,
               repair.system_type || 'glass repair',
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
             break;
 
           case '72h':
-            await botSailorService.send72HourReminder(
+            await metaWhatsAppService.send72HourReminder(
               repair.customer_phone,
               repair.reference_number,
               checkoutUrl
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
             break;
 
           case '7d':
-            await botSailorService.send7DayReminder(
+            await metaWhatsAppService.send7DayReminder(
               repair.customer_phone,
               repair.reference_number,
               repair.calculated_call_out_fee,

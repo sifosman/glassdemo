@@ -15,6 +15,7 @@ const BRAND = {
   primaryDark: '#0b3458',
   accent: '#d97706',
   danger: '#b91c1c',
+  estimate: '#d97706', // Amber color for estimate warning
 };
 
 const styles = StyleSheet.create({
@@ -85,6 +86,12 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: BRAND.line, marginVertical: 10 },
   paymentBadge: { borderWidth: 1, borderColor: BRAND.line, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: BRAND.bg, alignSelf: 'flex-start' },
   paymentBadgeText: { fontSize: 9.5, color: BRAND.primaryDark, fontWeight: 700 },
+  // Estimate styles (NEW)
+  estimateBanner: { backgroundColor: BRAND.estimate, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6, marginBottom: 12, alignSelf: 'stretch' },
+  estimateBannerText: { color: '#fff', fontSize: 10, fontWeight: 700, textAlign: 'center' },
+  estimateNote: { fontSize: 9, color: BRAND.muted, lineHeight: 1.4, marginTop: 8, fontStyle: 'italic' },
+  estimateBox: { borderWidth: 1, borderColor: BRAND.estimate, borderRadius: 8, padding: 10, backgroundColor: '#fffbeb', marginVertical: 10 },
+  estimateBoxText: { fontSize: 9.5, color: BRAND.ink, lineHeight: 1.4 },
 });
 
 interface QuoteDocumentProps {
@@ -450,6 +457,20 @@ const QuoteDocument: React.FC<QuoteDocumentProps> = ({ quote }) => {
               <Text style={styles.note}>Safety glazing will be applied per SANS 10400-N where required. Item-by-item notes are shown in the Technical Schedule.</Text>
             </View>
           ) : null}
+        </View>
+
+        {/* ESTIMATE BANNER - NEW */}
+        <View style={styles.estimateBanner}>
+          <Text style={styles.estimateBannerText}>ESTIMATE — NOT A FINAL QUOTATION</Text>
+        </View>
+
+        <View style={styles.estimateBox}>
+          <Text style={styles.estimateBoxText}>
+            This document is an ESTIMATE based on measurements and specifications provided by the customer.
+            The final price will be confirmed during our free site inspection and measurement verification.{'\n\n'}
+            • Hardware and opening mechanisms are estimated based on sketch interpretation{'\n'}
+            • If final requirements differ, adjusted price will be provided before manufacture
+          </Text>
         </View>
 
         <Text style={styles.sectionTitle}>Quotation Items</Text>

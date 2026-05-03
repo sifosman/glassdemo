@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GlassQuoteService } from '@/services/glassQuoteService';
-import { BotSailorService } from '@/services/botSailorService';
+import { MetaWhatsAppService } from '@/services/metaWhatsAppService';
 import { DatabaseService } from '@/services/databaseService';
 import { PDFService } from '@/services/pdfService';
 
@@ -27,12 +27,24 @@ export async function POST(request: NextRequest) {
     
     // Initialize services
     const quoteService = new GlassQuoteService();
-    const botSailorService = new BotSailorService();
+    const metaWhatsAppService = new MetaWhatsAppService();
     const pdfService = new PDFService();
     let quotePdfUrl: string | null = null;
     
+    // Validate items contain required fields and extract opening_mechanism
+    const processedItems = items.map((item: any) => ({
+      width_mm: item.width_mm,
+      height_mm: item.height_mm,
+      type: item.type,
+      glassType: item.glassType,
+      frameColor: item.frameColor,
+      thickness: item.thickness,
+      quantity: item.quantity || 1, // Include quantity, default to 1 if not provided
+      opening_mechanism: item.opening_mechanism || 'unknown' // Default to unknown if not provided
+    }));
+
     // Calculate quote
-    const quote = await quoteService.calculateQuote({ ...customer, phone: customer.phone || whatsappUserId }, items);
+    const quote = await quoteService.calculateQuote({ ...customer, phone: customer.phone || whatsappUserId }, processedItems);
     
     // Save quote to Supabase
     await DatabaseService.saveQuote(quote);
@@ -54,9 +66,9 @@ export async function POST(request: NextRequest) {
     
     // Send quote PDF link + attachment via WhatsApp (preferred), fallback to web link if PDF not available
     if (quotePdfUrl) {
-      await botSailorService.sendQuotePdfToWhatsApp(whatsappUserId, quotePdfUrl, quoteUrl, quote.quoteNumber);
+      await metaWhatsAppService.sendQuotePdfToWhatsApp(whatsappUserId, quotePdfUrl, quoteUrl, quote.quoteNumber);
     } else {
-      await botSailorService.sendQuoteLinkToWhatsApp(whatsappUserId, quoteUrl, quote.quoteNumber);
+      await metaWhatsAppService.sendQuoteLinkToWhatsApp(whatsappUserId, quoteUrl, quote.quoteNumber);
     }
     
     return NextResponse.json({
