@@ -15,8 +15,8 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 type ReminderType = '24h' | '72h' | '7d';
 
 interface ReminderResult {
-  repair_id: string;
-  reference_number: string;
+  quote_id: string;
+  quote_number: string;
   reminder_type: ReminderType;
   success: boolean;
   error?: string;

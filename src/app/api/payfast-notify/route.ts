@@ -367,6 +367,53 @@ export async function POST(request: NextRequest) {
 
             await metaWhatsAppService.sendTextMessage(whatsappUserId, message);
             console.log('Payment confirmation WhatsApp message sent successfully');
+            
+            // Update conversation session to inform AI about payment
+            try {
+              const { data: session } = await supabase
+                .from('conversation_sessions')
+                .select('conversation_history, context_data')
+                .eq('phone_number', whatsappUserId)
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .single();
+              
+              if (session) {
+                const updatedHistory = [
+                  ...JSON.parse(session.conversation_history || '[]'),
+                  {
+                    role: 'system',
+                    content: `PAYMENT RECEIVED: Deposit payment of R${amountGross.toFixed(2)} received for quote ${quoteRecord.quote_number}. Remaining balance: R${remainingBalance.toFixed(2)}. Status: Deposit paid - awaiting scheduling.`,
+                    timestamp: new Date().toISOString()
+                  }
+                ];
+                
+                const updatedContext = {
+                  ...JSON.parse(session.context_data || '{}'),
+                  last_payment_received: {
+                    amount: amountGross,
+                    quote_number: quoteRecord.quote_number,
+                    timestamp: new Date().toISOString(),
+                    remaining_balance: remainingBalance,
+                    payment_status: 'deposit_paid'
+                  }
+                };
+                
+                await supabase
+                  .from('conversation_sessions')
+                  .update({
+                    conversation_history: JSON.stringify(updatedHistory),
+                    context_data: JSON.stringify(updatedContext),
+                    last_intent: 'payment_received',
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('phone_number', whatsappUserId);
+                  
+                console.log('AI chat updated with payment information');
+              }
+            } catch (sessionError) {
+              console.error('Failed to update AI chat with payment info:', sessionError);
+            }
           } else {
             console.warn('No WhatsApp user ID found to send payment confirmation');
           }
