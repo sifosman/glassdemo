@@ -144,8 +144,8 @@ export async function POST(request: NextRequest) {
 
         sent++;
         results.push({
-          repair_id: repair.id,
-          reference_number: repair.reference_number,
+          quote_id: repair.id,
+          quote_number: repair.reference_number,
           reminder_type: reminderType,
           success: true
         });
@@ -159,8 +159,8 @@ export async function POST(request: NextRequest) {
         failed++;
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         results.push({
-          repair_id: repair.id,
-          reference_number: repair.reference_number,
+          quote_id: repair.id,
+          quote_number: repair.reference_number,
           reminder_type: reminderType,
           success: false,
           error: errorMessage
