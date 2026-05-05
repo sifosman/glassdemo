@@ -94,9 +94,15 @@ export class MetaWhatsAppService {
   ): Promise<void> {
     const caption =
       `🔷 *OWD Glass Quote ${quoteReference}*\n\n` +
-      `Your glass quotation is ready.\n\n` +
-      `🌐 View online: ${quoteUrl}\n\n` +
-      `Quote valid for 7 days. 50% deposit to proceed.\n\n` +
+      `✅ Your glass quotation is ready!\n\n` +
+      `💰 *PAYMENT & QUOTE DETAILS*\n` +
+      `🔗 View & Pay: ${quoteUrl}\n\n` +
+      `💳 50% deposit required to proceed\n` +
+      `⏰ Quote valid for 7 days\n\n` +
+      `📱 Click the link above to:\n` +
+      `• View your detailed quote\n` +
+      `• Make secure payment\n` +
+      `• Download PDF invoice\n\n` +
       `Questions? Contact us:\n📧 info@owdglass.co.za\n📞 +27 66 307 7449\n\n` +
       `SANS 10400-N Compliant ✅`;
 
@@ -115,9 +121,15 @@ export class MetaWhatsAppService {
   ): Promise<void> {
     const message =
       `🔷 *OWD Glass Quote ${quoteReference}*\n\n` +
-      `Your glass quotation is ready!\n\n` +
-      `📋 View your detailed quote here:\n${quoteUrl}\n\n` +
-      `Quote valid for 7 days. 50% deposit to proceed.\n\n` +
+      `✅ Your glass quotation is ready!\n\n` +
+      `� *PAYMENT & QUOTE DETAILS*\n` +
+      `🔗 View & Pay: ${quoteUrl}\n\n` +
+      `💳 50% deposit required to proceed\n` +
+      `⏰ Quote valid for 7 days\n\n` +
+      `📱 Click the link above to:\n` +
+      `• View your detailed quote\n` +
+      `• Make secure payment\n` +
+      `• Download PDF invoice\n\n` +
       `Questions? Contact us:\n📧 info@owdglass.co.za\n📞 +27 66 307 7449\n\n` +
       `SANS 10400-N Compliant ✅`;
 
