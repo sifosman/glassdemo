@@ -65,10 +65,15 @@ export async function POST(request: NextRequest) {
     const quoteUrl = `${baseUrl}/quote/${quote.quoteNumber}?reference=${quote.quoteNumber}`;
     
     // Send quote PDF link + attachment via WhatsApp (preferred), fallback to web link if PDF not available
-    if (quotePdfUrl) {
-      await metaWhatsAppService.sendQuotePdfToWhatsApp(whatsappUserId, quotePdfUrl, quoteUrl, quote.quoteNumber);
-    } else {
-      await metaWhatsAppService.sendQuoteLinkToWhatsApp(whatsappUserId, quoteUrl, quote.quoteNumber);
+    try {
+      if (quotePdfUrl) {
+        await metaWhatsAppService.sendQuotePdfToWhatsApp(whatsappUserId, quotePdfUrl, quoteUrl, quote.quoteNumber);
+      } else {
+        await metaWhatsAppService.sendQuoteLinkToWhatsApp(whatsappUserId, quoteUrl, quote.quoteNumber);
+      }
+    } catch (whatsappError) {
+      console.error('Failed to send WhatsApp message:', whatsappError);
+      // Continue even if WhatsApp fails - quote is still generated and saved
     }
     
     return NextResponse.json({
