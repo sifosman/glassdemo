@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
 
 interface RepairRequest {
   id: string;
@@ -146,6 +147,9 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Link href="/dashboard/chat" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors">
+                Live Chat
+              </Link>
               <span className="text-sm text-gray-600">{formatDate(new Date().toISOString())}</span>
               <div className="bg-green-500 w-2 h-2 rounded-full animate-pulse"></div>
             </div>
